@@ -87,7 +87,7 @@ pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
    | Field | Notes |
    | --- | --- |
    | `llama.cpp directory` | Folder containing `llama-server.exe` (required) |
-   | `Port` | Default `55555`; keep it in sync with the DSH provider's `baseURL` |
+   | `Port` | Default `55555`; saved changes re-sync the provider's `baseURL` on the **next start** |
    | `API key` | Leave empty = no auth (loopback only); otherwise match `DSH_LOCAL_LLM_KEY` |
    | `35B / 9B folders` | Model folders; defaults are `llama.cpp dir\qwen3.6-35B-A3B` / `...\qwen3.5-9B` |
 

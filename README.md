@@ -87,7 +87,7 @@ pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
    | 表单项 | 说明 |
    | --- | --- |
    | `llama.cpp 目录` | `llama-server.exe` 所在文件夹（必填） |
-   | `端口` | 默认 55555；与 DSH provider 的 baseURL 保持一致 |
+   | `端口` | 默认 55555；保存后**下次启动**自动同步到模型 provider 的 baseURL |
    | `密钥` | 留空 = 无鉴权（仅回环 127.0.0.1）；需要时与 `DSH_LOCAL_LLM_KEY` 一致 |
    | `35B / 9B 文件夹` | 各模型所在文件夹；默认 `llama.cpp 目录\qwen3.6-35B-A3B` 与 `...\qwen3.5-9B` |
 
