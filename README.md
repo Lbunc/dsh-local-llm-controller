@@ -137,14 +137,17 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 
 5. 重启 DSH Web（provider 由插件自动补建，无需手写；如需自定义见下节）。
 
-## 配置（安装时必读）
+## 配置
 
-配置按优先级合并（后者覆盖前者），**修改后需重启 DSH 生效**：
+**推荐方式：插件卡片内配置**（设置 → 插件 → Local LLM Controller → 展开「配置」区），
+llama.cpp 目录、端口、密钥、两个模型文件夹都是表单，保存后下次启动生效，不用碰任何文件。
 
-1. `~/.dsh/local-llm.config.json` —— **安装脚本写入，日常改这个就够了**（JSON，格式最简单）
-2. `~/.dsh/settings.yaml` 的 `local-llm.config` 段 —— 高级用法（想和别的配置放一起时）
+配置按优先级合并（后者覆盖前者），修改后**下次启动生效**：
 
-### 1) 配置文件字段
+1. 卡片「配置」表单 / `settings.yaml` 的 `local-llm.config` 段（同一处，卡片就是写这里）
+2. `~/.dsh/local-llm.config.json` —— install.ps1 写入（`{llamaDir}` 占位符在 `dir` 里可用）
+
+### 1) 配置字段
 
 | 字段 | 默认值 | 说明 |
 |---|---|---|
@@ -157,30 +160,19 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 | `server.ngl` | `99` | GPU 卸载层数；CPU-only 构建请设 `0` |
 | `server.threads` / `server.batchThreads` | `20` / `20` | 线程数，按你的 CPU 调整 |
 | `server.parallel` | `1` | 并发槽位 |
-| `models.35b.file` / `mmproj` | 见下表 | 35B GGUF / mmproj 路径 |
+| `models.35b.dir` | `{llamaDir}/qwen3.6-35B-A3B` | 35B 模型文件夹（内含模型 GGUF + mmproj） |
 | `models.35b.alias` | `qwen3.6-35b-a3b` | 服务别名（llama-server `-a`） |
 | `models.35b.providerKey` | `qwen36-local` | DSH provider key（contextWindow 同步目标） |
-| `models.9b.file` / `mmproj` / `alias` / `providerKey` | 见下表 | 9B 对应项 |
+| `models.9b.dir` / `alias` / `providerKey` | `{llamaDir}/qwen3.5-9B` / `qwen3.5-9b` / `qwen35-local` | 9B 对应项 |
 
-默认模型路径（基于 `llamaDir`，若你的目录结构不同，在 `models.*` 里覆盖）：
+**模型文件夹约定**：插件启动时在文件夹内自动识别——文件名含 `mmproj` 的 `.gguf` 是视觉投影，
+其余 `.gguf` 是模型本体（量化标签、"Uncensored" 后缀等都不影响）。文件夹不存在或没有
+`.gguf` 时会明确报错。
 
-| key | 默认 file | 默认 mmproj |
-|---|---|---|
-| `35b` | `{llamaDir}/qwen3.6-35B-A3B/Qwen3.6-35B-A3B-IQ4_NL.gguf` | `{llamaDir}/qwen3.6-35B-A3B/mmproj-Qwen3.6-35B-A3B-f16.gguf` |
-| `9b` | `{llamaDir}/qwen3.5-9B/Qwen3.5-9B-Q4_K_M.gguf` | `{llamaDir}/qwen3.5-9B/mmproj-Qwen3.5-9B-BF16.gguf` |
-
-配置示例（`{llamaDir}` 占位符在 `file`/`mmproj` 里可用，会被替换为 `llamaDir`）：
+配置示例：
 
 ```yaml
 local-llm:
-  model: 35b          # 上次选择的模型，卡片会回读
-  mode: text
-  preset: fast
-  status: stopped     # 以下为运行时状态，插件自动维护，不用手写
-  action: null
-  pid: null
-  lastError: null
-  logTail: ""
   config:
     llamaDir: 'F:/llama-b10488-bin-win-cuda-13.3-x64'
     port: 67913
@@ -190,12 +182,11 @@ local-llm:
       threads: 20
     models:
       35b:
-        # file / mmproj 缺省即 {llamaDir}/qwen3.6-35B-A3B/...，可只覆盖需要的
+        dir: '{llamaDir}/qwen3.6-35B-A3B'   # 缺省即此值，可不写
         alias: qwen3.6-35b-a3b
         providerKey: qwen36-local
       9b:
-        file: 'F:/models/Qwen3.5-9B-Q4_K_M.gguf'
-        mmproj: 'F:/models/mmproj-Qwen3.5-9B-BF16.gguf'
+        dir: 'F:/models/qwen3.5-9B'          # 自定义目录示例
         alias: qwen3.5-9b
         providerKey: qwen35-local
 ```

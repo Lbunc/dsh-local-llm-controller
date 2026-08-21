@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   dsh-local-llm-controller 一键安装向导（Windows）
@@ -117,14 +117,14 @@ if (-not $SkipChecks) {
   } else {
     Write-Ok "找到 $exe"
   }
-  # 模型目录检查（文件名不限，只要有 gguf 即可，用户可自定义路径）
+  # 模型目录检查（文件名不限，只要有 gguf 即可；路径可在插件卡片「配置」里改）
   $modelDirs = @('qwen3.6-35B-A3B', 'qwen3.5-9B')
   foreach ($d in $modelDirs) {
     $dir = Join-Path $LlamaDir $d
     if (-not (Test-Path $dir)) {
-      Write-Warn "未找到模型目录 $dir （可忽略：只要 local-llm.config.json 里的路径正确即可）"
+      Write-Warn "未找到模型目录 $dir （可忽略：可在插件卡片「配置」中指定）"
     } elseif (-not (Get-ChildItem $dir -Filter '*.gguf' -ErrorAction SilentlyContinue)) {
-      Write-Warn "模型目录 $dir 下没有 .gguf 文件（可忽略：只要 local-llm.config.json 里的路径正确即可）"
+      Write-Warn "模型目录 $dir 下没有 .gguf 文件（可忽略：可在插件卡片「配置」中指定）"
     } else {
       Write-Ok "找到模型目录 $dir"
     }
