@@ -1,0 +1,6 @@
+# dsh-local-llm-controller bundle patch
+# Declared via "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }; loading
+# this package as a profile layer registers the plugin row automatically.
+- insert:
+    - id: local-llm-controller
+      name: 'dsh-local-llm-controller'

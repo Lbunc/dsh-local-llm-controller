@@ -60,14 +60,13 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 
 ## 安装
 
-> **关于** **`dsh plugin`**：`dsh plugin --profile <名字> <参数>` 只是把参数**原样转发给 profile
-> 目录下的 pnpm**（等价于在 profile 里执行 `pnpm add xxx`，装依赖）。DSH 启动时只加载
-> `dsh.profile.bundles` 里声明的包 + `cordis.patch.yml` 注册的插件，**不会自动发现
-> node\_modules 里装了什么**——所以第三方插件永远需要两步：装依赖 + 写注册行。
+> **关于 `dsh plugin`**：`dsh plugin --profile <名字> <参数>` 只是把参数**原样转发给 profile
+> 目录下的 pnpm**。本包声明了 `dsh.bundle`，`dsh plugin add` 后 dsh 会**自动把本包加入
+> `dsh.profile.bundles`**，作为 profile layer 加载——**不需要手写 cordis.patch.yml 注册行**。
 
-### 方式 A：npm 安装（推荐）
+### 方式 A：npm 安装（一条命令）
 
-1. 安装包（任何目录执行，`dsh plugin` 转发给 profile 下的 pnpm）。`dsh` 已在 PATH
+1. 安装（任何目录执行，`dsh plugin` 转发给 profile 下的 pnpm）。`dsh` 已在 PATH
    （全局安装过 `@deepseek-ai/dsh`）时：
 
    ```bash
@@ -81,22 +80,17 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
    # 或 npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
    ```
 
-2. 注册（DSH 架构要求，3 行 YAML）。在 `~/.dsh/profiles/web/cordis.patch.yml` 追加：
-   ```yaml
-   - insert:
-       - id: local-llm-controller
-         name: 'dsh-local-llm-controller'
-   ```
-3. **重启 DSH Web** → 设置 → 插件 → Local LLM Controller → 展开卡片 → 按「配置」节填写
+2. **重启 DSH Web** → 设置 → 插件 → Local LLM Controller → 展开卡片 → 按「配置」节填写
    llama.cpp 目录/端口/模型文件夹 → 保存 → 选模型/模式/预设 → 启动。
 
-> 插件启动时会**自动补建** `llm-pi-ai.providers.qwen36-local / qwen35-local` 两个 provider
-> （缺失才建，已有配置不动），所以你不必手写 provider 配置。
+> 安装会自动注册（bundle layer），插件启动时会**自动补建**
+> `llm-pi-ai.providers.qwen36-local / qwen35-local` 两个 provider（缺失才建，已有配置不动），
+> 所以你不必手写 provider 配置。
 
 ### 方式 B：手动安装（不依赖 npm）
 
-1. 获取插件：`git clone ` <https://github.com/Lbunc/dsh-local-llm-controller.git> 或直接复制本目录到任意位置。
-2. 把插件本体复制到 profile 内（以 `web` profile 为例）：
+1. 获取插件：`git clone <本仓库>` 或直接复制本目录到任意位置。
+2. 把插件复制到 profile 内（以 `web` profile 为例）：
    ```powershell
    $dst = "$HOME\.dsh\profiles\web\plugins\dsh-local-llm-controller"
    New-Item -ItemType Directory -Force -Path $dst | Out-Null
