@@ -64,45 +64,30 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 > 目录下的 pnpm**（等价于在 profile 里执行 `pnpm add xxx`，装依赖）。DSH 启动时只加载
 > `dsh.profile.bundles` 里声明的包 + `cordis.patch.yml` 注册的插件，**不会自动发现
 > node_modules 里装了什么**——所以第三方插件永远需要两步：装依赖 + 写注册行。
-> 别人的"一行命令"要么是官方 bundle 插件（已经声明在 bundles 里，只需装依赖），
-> 要么是把这两步合并成一句话。本仓库的 `install.ps1` 就是把这两步 + 配置合并成一条命令。
 
-### 方式 A：一键安装（推荐，Windows）
+### 方式 A：npm 安装（推荐）
 
-1. 下载/克隆本仓库，进入目录。
-2. 运行安装向导（PowerShell 7 或 Windows PowerShell 5.1 均可）：
+1. 安装包（任何目录执行，`dsh plugin` 转发给 profile 下的 pnpm）：
 
-   ```powershell
-   .\install.ps1
+   ```bash
+   dsh plugin --profile web add dsh-local-llm-controller
    ```
 
-   跟着提示走，只需回答 llama.cpp 目录（其余直接回车即可）：
+2. 注册（DSH 架构要求，3 行 YAML）。在 `~/.dsh/profiles/web/cordis.patch.yml` 追加：
 
-   ```
-   == llama.cpp 目录
-      llama.cpp 目录（包含 llama-server.exe 的文件夹）: F:\llama.cpp
-   == 服务端口 [回车 = 67913]
-   == API 密钥 [回车 = 无鉴权（仅本机回环，推荐）]
-   ```
-
-   脚本会自动完成：把插件本体复制到 `~/.dsh/profiles/<名字>/plugins/`（与 git 仓库解耦）
-   → 在 profile package.json 注册依赖 `link:./plugins/dsh-local-llm-controller`（相对路径，
-   profile 整体搬迁不断链）→ 刷新 node_modules → 追加 `cordis.patch.yml` 注册行（幂等）
-   → 写入配置 `~/.dsh/local-llm.config.json` → 检查 llama-server.exe 与默认模型文件。
-   重复运行会询问是否用仓库版本覆盖已安装的本体（`-Force` 直接覆盖）。
-
-   非交互模式（适合脚本化）：
-
-   ```powershell
-   .\install.ps1 -LlamaDir F:\llama.cpp
+   ```yaml
+   - insert:
+       - id: local-llm-controller
+         name: 'dsh-local-llm-controller'
    ```
 
-3. **重启 DSH Web**，打开 设置 → 插件 → Local LLM Controller 即可使用。
+3. **重启 DSH Web** → 设置 → 插件 → Local LLM Controller → 展开卡片 → 按「配置」节填写
+   llama.cpp 目录/端口/模型文件夹 → 保存 → 选模型/模式/预设 → 启动。
 
 > 插件启动时会**自动补建** `llm-pi-ai.providers.qwen36-local / qwen35-local` 两个 provider
 > （缺失才建，已有配置不动），所以你不必手写 provider 配置。
 
-### 方式 B：手动安装
+### 方式 B：手动安装（不依赖 npm）
 
 1. 获取插件：`git clone <本仓库>` 或直接复制本目录到任意位置。
 
@@ -127,27 +112,35 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
    cd ~/.dsh/profiles/web && pnpm install   # 或 dsh plugin --profile web install
    ```
 
-4. 在 `~/.dsh/profiles/web/cordis.patch.yml` 追加注册行：
+4. 追加注册行（同方式 A 第 2 步）。
 
-   ```yaml
-   - insert:
-       - id: local-llm-controller
-         name: 'dsh-local-llm-controller'
-   ```
+5. 重启 DSH Web。
 
-5. 重启 DSH Web（provider 由插件自动补建，无需手写；如需自定义见下节）。
+## 配置（卡片操作，路径和端口都在这里配）
 
-## 配置
+**不需要编辑任何配置文件**。打开 DSH Web → 设置 → 插件 → **Local LLM Controller** → 展开卡片：
 
-**推荐方式：插件卡片内配置**（设置 → 插件 → Local LLM Controller → 展开「配置」区），
-llama.cpp 目录、端口、密钥、两个模型文件夹都是表单，保存后下次启动生效，不用碰任何文件。
+1. 在「配置」区填写（保存后下次启动生效）：
+
+   | 表单项 | 说明 |
+   |---|---|
+   | llama.cpp 目录 | `llama-server.exe` 所在文件夹（如 `F:/llama.cpp`）——**必填** |
+   | 端口 | 默认 `67913`；须与 DSH provider 的 `baseURL` 一致 |
+   | 密钥 | 留空 = 无鉴权（仅 127.0.0.1 回环）；设置后与 `DSH_LOCAL_LLM_KEY` 一致 |
+   | 35B 文件夹 | 35B 模型 GGUF + mmproj 所在文件夹 |
+   | 9B 文件夹 | 9B 模型 GGUF + mmproj 所在文件夹 |
+
+   > 模型文件夹内**自动识别**：文件名含 `mmproj` 的 `.gguf` 是视觉投影，其余 `.gguf` 是
+   > 模型本体（量化标签、后缀不影响）。文件夹不存在或没有 `.gguf` 会明确报错。
+
+2. 点「保存配置」→ 选模型（35B/9B）、模式、预设 → 「启动」。
 
 配置按优先级合并（后者覆盖前者），修改后**下次启动生效**：
 
 1. 卡片「配置」表单 / `settings.yaml` 的 `local-llm.config` 段（同一处，卡片就是写这里）
-2. `~/.dsh/local-llm.config.json` —— install.ps1 写入（`{llamaDir}` 占位符在 `dir` 里可用）
+2. `~/.dsh/local-llm.config.json`（可选，安装脚本时代遗留；`{llamaDir}` 占位符在 `dir` 里可用）
 
-### 1) 配置字段
+### 配置字段参考
 
 | 字段 | 默认值 | 说明 |
 |---|---|---|
