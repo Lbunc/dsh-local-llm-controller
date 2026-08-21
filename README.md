@@ -219,6 +219,8 @@ llm-pi-ai:
 
 > 来源：作者在 RTX 4070 SUPER 12GB（12282 MiB）+ 32GB 内存 + i5-13600KF（6P+8E，20 线程）上的完整扫描实验
 > （`llama.cpp b10488`，CUDA 13.3 构建）。数据为干净环境复测结果。以下全部为 **35B 实测**；9B 未做专项扫描。
+> 完整报告、原始数据与全部测试脚本（脱敏版，路径以 `{llama-home}` / `{work-dir}` / `{dsh-home}` 占位）见
+> [docs/measurements/](docs/measurements/)。
 
 ### 上下文 vs 速度（ncmoe 20，纯文本）
 

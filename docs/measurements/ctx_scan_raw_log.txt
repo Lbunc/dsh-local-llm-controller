@@ -1,0 +1,270 @@
+===== scan_ctx.ps1 raw output (ctx scan 40960-81920) =====
+########## CTX=40960 budget=20480 ##########
+C=40960 applied_n_ctx=40960
+C=40960 idle: ded=11737 shared=181 apps=
+C=40960 short: gen=96t eval=57.1/s
+C=40960 deep(rounds=7): prompt=30766t gen=128t eval=63.3/s wall=39.9s
+C=40960 after: ded=11785 shared=184 apps=
+########## CTX=49152 budget=24576 ##########
+C=49152 applied_n_ctx=49152
+C=49152 idle: ded=11785 shared=186 apps=
+C=49152 short: gen=96t eval=57.5/s
+C=49152 deep(rounds=9): prompt=39548t gen=128t eval=63.3/s wall=50.9s
+C=49152 after: ded=11831 shared=187 apps=
+########## CTX=57344 budget=28672 ##########
+C=57344 applied_n_ctx=57344
+C=57344 idle: ded=11808 shared=257 apps=
+C=57344 short: gen=96t eval=55.4/s
+C=57344 deep(rounds=10): prompt=43941t gen=128t eval=57.4/s wall=57s
+C=57344 after: ded=11873 shared=262 apps=
+########## CTX=65536 budget=32768 ##########
+C=65536 applied_n_ctx=65536
+C=65536 idle: ded=11817 shared=332 apps=
+C=65536 short: gen=96t eval=50.0/s
+C=65536 deep(rounds=12): prompt=52727t gen=128t eval=47.6/s wall=79.6s
+C=65536 after: ded=11826 shared=358 apps=
+########## CTX=81920 budget=40960 ##########
+C=81920 applied_n_ctx=81920
+C=81920 idle: ded=11908 shared=343 apps=
+C=81920 short: gen=96t eval=51.4/s
+C=81920 deep(rounds=16): prompt=70299t gen=128t eval=56.9/s wall=97.1s
+C=81920 after: ded=11930 shared=378 apps=
+########## ctx scan done ##########
+
+===== baseline reference (pwsh-9 session, -c 32768 --reasoning-budget 2048, before scan) =====
+idle: ded=11694 shared=173 (n_prompt_tokens_cache=0)
+short: 64-76 t/s across tasks
+deep 14.6k fill: eval=70.43/s (prompt=14680t)
+deep 21.8k fill: eval=73.85/s (prompt=7725t, n_gen=7725)
+riddle test (budget 2048): total=1854t, wall=26.1s
+
+===== verify_final.ps1 raw output (-c 49152 --reasoning-budget 24576) =====
+idle: ded=11642 shared=187
+short#1: gen=96t eval=51.0/s
+short#2: gen=96t eval=64.8/s
+deep: prompt=39548t gen=128t eval=60.6/s
+riddle: total=2199t think=True content_len=511 wall=30.6s
+after: ded=11698 shared=189
+########## final verify done ##########
+
+===== GGUF metadata (gguf_ctxlen.ps1) =====
+general.architecture = qwen35moe
+qwen35moe.block_count = 40
+qwen35moe.embedding_length = 2048
+qwen35moe.attention.head_count = 16
+qwen35moe.attention.head_count_kv = 2
+qwen35moe.expert_count = 256
+qwen35moe.expert_used_count = 8
+qwen35moe.attention.key_length = 256
+qwen35moe.attention.value_length = 256
+qwen35moe.ssm.inner_size = 4096
+qwen35moe.full_attention_interval = 4
+
+===== files =====
+mmproj-Qwen3.6-35B-A3B-Uncensored-f16.gguf   858 MB
+Qwen3.6-35B-A3B-Uncensored-IQ4_NL.gguf     18863 MB
+
+===== ncmoe 22 scans raw output =====
+
+--- probe (pwsh-14): ncmoe=22 CTX=49152 ---
+C=49152 applied_n_ctx=49152
+C=49152 idle: ded=10830 shared=169
+C=49152 short: gen=96t eval=53.9/s
+C=49152 deep(rounds=9): prompt=39548t gen=128t eval=61.1/s wall=56.1s
+C=49152 after: ded=10864 shared=165
+(freed vs ncmoe20@49152: ded 11785-10830 = 955MB)
+
+--- scan (pwsh-16, killed early after 196608 cliff): ncmoe=22 ---
+########## CTX=65536 budget=32768 ##########
+C=65536 applied_n_ctx=65536
+C=65536 idle: ded=11012 shared=197
+C=65536 short: gen=96t eval=54.3/s
+C=65536 deep(rounds=12): prompt=52727t gen=128t eval=58.1/s wall=74.6s
+C=65536 after: ded=11050 shared=196
+########## CTX=131072 budget=65536 ##########
+C=131072 applied_n_ctx=131072
+C=131072 idle: ded=11794 shared=260
+C=131072 short: gen=96t eval=53.7/s
+C=131072 deep(rounds=27): prompt=118622t gen=128t eval=45.4/s wall=176.3s
+C=131072 after: ded=11831 shared=293
+########## CTX=196608 budget=98304 ##########
+C=196608 applied_n_ctx=196608
+C=196608 idle: ded=11758 shared=1225
+C=196608 short: gen=96t eval=19.6/s
+(killed after this point - hard cliff confirmed)
+
+--- refined scan (pwsh-17): ncmoe=22 ---
+C=81920 applied_n_ctx=81920
+C=81920 idle: ded=11135 shared=213
+C=81920 short: gen=96t eval=51/s
+C=81920 deep(rounds=16): prompt=70299t gen=128t eval=53.8/s wall=100.4s
+C=81920 after: ded=11198 shared=214
+C=98304 applied_n_ctx=98304
+C=98304 idle: ded=11361 shared=229
+C=98304 short: gen=96t eval=46.9/s
+C=98304 deep(rounds=20): prompt=87871t gen=128t eval=51.5/s wall=127.5s
+C=98304 after: ded=11413 shared=230
+C=114688 applied_n_ctx=114688
+C=114688 idle: ded=11577 shared=245
+C=114688 short: gen=96t eval=52.4/s
+C=114688 deep(rounds=23): prompt=101050t gen=128t eval=48.3/s wall=147.9s
+C=114688 after: ded=11633 shared=246
+
+--- same-fill 57k comparison (pwsh-18): ncmoe=22 rounds=13 ---
+C=65536 idle: ded=10930 shared=197 | short 53.3 | deep prompt=57120t eval=54.6/s
+C=98304 idle: ded=11379 shared=230 | short 53.1 | deep prompt=57120t eval=56.9/s
+C=131072 idle: ded=11732 shared=323 | short 50.1 | deep prompt=57120t eval=54.3/s
+C=147456 idle: ded=11832 shared=404 | short 50.5 | deep prompt=57120t eval=52.2/s
+
+--- GPU util fill-speed curve (pwsh-19): ncmoe=22 C=131072 ---
+applied_n_ctx=131072 idle: ded=11747 shared=261
+fill=60000 rounds=13 prompt=57120t gen=256t eval=56.2/s gpu_util=67% wall_gen=4.5s
+fill=90000 rounds=20 prompt=30780t gen=256t eval=51.9/s gpu_util=72% wall_gen=4.9s  (prompt_n=增量, 前缀复用)
+fill=120000 rounds=26 prompt=26387t gen=256t eval=48.7/s gpu_util=77% wall_gen=5.2s  (prompt_n=增量, 前缀复用)
+
+--- hard-cliff probes (pwsh-19 phase2): ncmoe=22 ---
+C=163840 applied_n_ctx=163840 idle: ded=11755 shared=672
+C=163840 short: gen=96t eval=50/s
+C=180224 applied_n_ctx=180224 idle: ded=11854 shared=814
+C=180224 short: gen=96t eval=50.6/s
+
+--- deep at 163840 (pwsh-21): rounds=26 (~114k fill) ---
+C=163840 applied_n_ctx=OK idle: ded=11828 shared=613
+C=163840 deep(rounds=26): prompt=114229t gen=256t eval=40.3/s gpu_util=79%
+C=163840 after: ded=11950 shared=631
+
+--- GGUF key: qwen35moe.context_length = 262144 (native 256K) ---
+
+===== reliability confirmation sweeps raw output =====
+
+--- CONFIRM sweep (pwsh-23, clean machine, 7 points) ---
+########## CONFIRM ncmoe=20 CTX=40960 ##########
+C=40960 idle: ded=11448 shared=142
+C=40960 short: 55.6 / 66.2 t/s
+C=40960 deep: rounds=7 prompt=30766t gen=128t eval=64.1/s
+C=40960 after: ded=11493 shared=146
+########## CONFIRM ncmoe=20 CTX=49152 ##########
+C=49152 idle: ded=11531 shared=151
+C=49152 short: 57 / 69.3 t/s
+C=49152 deep: rounds=9 prompt=39548t gen=128t eval=61.8/s
+C=49152 after: ded=11585 shared=153
+########## CONFIRM ncmoe=20 CTX=57344 ##########
+C=57344 idle: ded=11625 shared=159
+C=57344 short: 54.4 / 71.1 t/s
+C=57344 deep: rounds=10 prompt=43941t gen=128t eval=72.8/s
+C=57344 after: ded=11696 shared=174
+########## CONFIRM ncmoe=20 CTX=65536 ##########
+C=65536 idle: ded=11734 shared=180
+C=65536 short: 59.1 / 84 t/s
+C=65536 deep: rounds=12 prompt=52727t gen=128t eval=68.9/s
+C=65536 after: ded=11788 shared=165
+########## CONFIRM ncmoe=20 CTX=81920 ##########
+C=81920 idle: ded=11816 shared=303
+C=81920 short: 59.2 / 83.5 t/s
+C=81920 deep: rounds=16 prompt=70299t gen=128t eval=63.5/s
+C=81920 after: ded=11838 shared=341
+########## CONFIRM ncmoe=22 CTX=98304 ##########
+C=98304 idle: ded=11298 shared=195
+C=98304 short: 58.2 / 80 t/s
+C=98304 deep: rounds=20 prompt=87871t gen=128t eval=59.5/s
+C=98304 after: ded=11352 shared=193
+########## CONFIRM ncmoe=22 CTX=131072 ##########
+C=131072 idle: ded=11734 shared=227
+C=131072 short: 59.1 / 76.1 t/s
+C=131072 deep: rounds=27 prompt=118622t gen=128t eval=53.8/s
+C=131072 after: ded=11788 shared=228
+########## confirm sweep done ##########
+
+--- CONFIRM2 focused repeat (pwsh-24, clean machine, deep x2 per point) ---
+########## CONFIRM2 ncmoe=20 CTX=49152 ##########
+C=49152 idle: ded=11548 shared=147
+C=49152 short: 60.6 / 81 t/s
+C=49152 deep#1: rounds=9 prompt=39548t gen=128t eval=72.7/s
+C=49152 deep#2: rounds=9 prompt=4t gen=128t eval=74.3/s   (prefix reused, eval at full 39.5k depth)
+C=49152 after: ded=11602 shared=145
+########## CONFIRM2 ncmoe=20 CTX=57344 ##########
+C=57344 idle: ded=11642 shared=151
+C=57344 short: 62.7 / 82.8 t/s
+C=57344 deep#1: rounds=10 prompt=43941t gen=128t eval=69.9/s
+C=57344 deep#2: rounds=10 prompt=4t gen=128t eval=70.7/s
+C=57344 after: ded=11696 shared=153
+########## CONFIRM2 ncmoe=20 CTX=65536 ##########
+C=65536 idle: ded=11734 shared=159
+C=65536 short: 62.3 / 79 t/s
+C=65536 deep#1: rounds=12 prompt=52727t gen=128t eval=69.3/s
+C=65536 deep#2: rounds=12 prompt=4t gen=128t eval=69.8/s
+C=65536 after: ded=11788 shared=161
+########## confirm sweep done ##########
+
+===== VISION (mmproj) sweeps raw output =====
+
+--- vision_sweep.ps1 (pwsh-26): ncmoe 20/22/24 + mmproj @32K, no reasoning_effort (content eaten by thinking) ---
+########## VISION ncmoe=20 ##########
+N=20 applied_n_ctx=32768 idle: ded=11847 shared=1072
+N=20 textShort: 55.7 / 67.5 t/s
+N=20 small#1: prompt=1044t gen=128t promptEval=10.7s eval=69.5/s wall=12.7s content_len=0
+N=20 big#1: prompt=4076t gen=128t promptEval=81.5s eval=71.4/s wall=83.8s content_len=0
+N=20 deepText: prompt=21984t gen=128t eval=67.8/s
+N=20 small#2: prompt=4t gen=128t promptEval=0.1s eval=72.3/s wall=2.1s content_len=0
+N=20 after: ded=11714 shared=1397
+########## VISION ncmoe=22 ##########
+N=22 applied_n_ctx=32768 idle: ded=11633 shared=148
+N=22 textShort: 52.6 / 64.5 t/s
+N=22 small#1: prompt=1044t gen=128t promptEval=2.7s eval=70.4/s wall=4.6s content_len=0
+N=22 big#1: prompt=4076t gen=128t promptEval=23.2s eval=64.1/s wall=25.8s content_len=0
+N=22 deepText: prompt=21984t gen=128t eval=60.7/s
+N=22 small#2: prompt=4t gen=128t promptEval=0.1s eval=65.5/s wall=2.2s content_len=0
+N=22 after: ded=11851 shared=346
+########## VISION ncmoe=24 ##########
+N=24 applied_n_ctx=32768 idle: ded=10733 shared=149
+N=24 textShort: 49.8 / 60 t/s
+N=24 small#1: prompt=1044t gen=128t promptEval=2.9s eval=67.2/s wall=4.8s content_len=0
+N=24 big#1: prompt=4076t gen=128t promptEval=11.9s eval=66.2/s wall=14.4s content_len=0
+N=24 deepText: prompt=21984t gen=128t eval=62.6/s
+N=24 small#2: prompt=4t gen=128t promptEval=0.1s eval=67.4/s wall=2.1s content_len=0
+N=24 after: ded=11179 shared=136
+
+--- confirm_vision.ps1 (pwsh-27): repeats + reasoning_effort=none (content OK) ---
+########## VISION-CONFIRM ncmoe=20 ##########
+N=20 idle: ded=11801 shared=703
+N=20 textShort: 47.5 / 69.1 / 66.6 t/s
+N=20 small: prompt=1046t gen=21t promptEval=8.7s eval=66.8/s wall=9.1s content_len=106
+N=20 big: prompt=4078t gen=29t promptEval=73.1s eval=63.2/s wall=74s content_len=166
+N=20 big#2: prompt=4t gen=33t promptEval=0.1s eval=64.1/s wall=1.1s content_len=166
+N=20 deepText: prompt=21984t gen=128t eval=66/s
+N=20 after: ded=11905 shared=1098
+########## VISION-CONFIRM ncmoe=22 ##########
+N=22 idle: ded=11531 shared=147
+N=22 textShort: 53.6 / 61.9 / 68.4 t/s
+N=22 small: prompt=1046t gen=21t promptEval=2.7s eval=66.2/s wall=3.1s content_len=107
+N=22 big: prompt=4078t gen=29t promptEval=18.6s eval=61.9/s wall=19.6s content_len=152
+N=22 big#2: prompt=4t gen=29t promptEval=0.1s eval=62.4/s wall=1s content_len=147
+N=22 deepText: prompt=21984t gen=128t eval=61.2/s
+N=22 after: ded=11821 shared=298
+########## VISION-CONFIRM ncmoe=24 ##########
+N=24 idle: ded=10661 shared=132
+N=24 textShort: 49.6 / 58.8 / 65.7 t/s
+N=24 small: prompt=1046t gen=20t promptEval=2.9s eval=65.6/s wall=3.2s content_len=97
+N=24 big: prompt=4078t gen=29t promptEval=11.8s eval=63.2/s wall=12.8s content_len=159
+N=24 big#2: prompt=4t gen=26t promptEval=0.1s eval=64/s wall=1s content_len=132
+N=24 deepText: prompt=21984t gen=128t eval=61.9/s
+N=24 after: ded=11123 shared=163
+
+--- vision_ctx_probe.ps1: vision + larger context ---
+N=24 C=131072 idle: ded=11794 shared=308
+N=24 C=131072 big: prompt=4078t promptEval=48.9s eval=61.2/s wall=50.1s
+N=24 C=131072 deep: prompt=118622t gen=128t eval=39.1/s
+N=24 C=131072 after: ded=11813 shared=751
+N=24 C=98304 idle: ded=11455 shared=198
+N=24 C=98304 big: prompt=4078t promptEval=15.2s eval=63.2/s wall=16.1s
+N=24 C=98304 deep: prompt=87871t gen=128t eval=49.5/s
+N=24 C=98304 after: ded=11836 shared=274
+N=22 C=65536 idle: ded=11795 shared=230
+N=22 C=65536 big: prompt=4078t promptEval=48.2s eval=61.1/s wall=49.3s
+N=22 C=65536 deep: prompt=52727t gen=128t eval=55.8/s
+N=22 C=65536 after: ded=11857 shared=626
+
+--- notes ---
+- test images: picture\test_circle.png (256x256, ~1024 image tokens) + picture\sample_photo.jpg (4.2MB photo, ~3032 image tokens)
+- identical repeated image request: 0.1s (KV prefix reuse)
+- content_len=0 in first sweep: max_tokens eaten by thinking (reasoning_effort not set); confirm sweep with reasoning_effort=none returned content normally (vision pipeline verified)
