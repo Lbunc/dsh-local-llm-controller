@@ -10,7 +10,10 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib"
+    "lib",
+    "install.ps1",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"

@@ -60,8 +60,41 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 
 ## 安装
 
-1. 获取插件：`git clone <本仓库>` 或直接复制本目录到任意位置。
+### 方式 A：一键安装（推荐，Windows）
 
+1. 下载/克隆本仓库，进入目录。
+2. 运行安装向导（PowerShell 7 或 Windows PowerShell 5.1 均可）：
+
+   ```powershell
+   .\install.ps1
+   ```
+
+   跟着提示走，只需回答 llama.cpp 目录（其余直接回车即可）：
+
+   ```
+   == llama.cpp 目录
+      llama.cpp 目录（包含 llama-server.exe 的文件夹）: F:\llama.cpp
+   == 服务端口 [回车 = 21113]
+   == API 密钥 [回车 = 无鉴权（仅本机回环，推荐）]
+   ```
+
+   脚本会自动完成：注册依赖到 DSH profile → 追加 `cordis.patch.yml` 注册行（幂等，不会重复）
+   → 写入配置 `~/.dsh/local-llm.config.json` → 检查 llama-server.exe 与默认模型文件是否存在。
+
+   非交互模式（适合脚本化）：
+
+   ```powershell
+   .\install.ps1 -LlamaDir F:\llama.cpp
+   ```
+
+3. **重启 DSH Web**，打开 设置 → 插件 → Local LLM Controller 即可使用。
+
+> 插件启动时会**自动补建** `llm-pi-ai.providers.qwen36-local / qwen-local` 两个 provider
+> （缺失才建，已有配置不动），所以你不必手写 provider 配置。
+
+### 方式 B：手动安装
+
+1. 获取插件：`git clone <本仓库>` 或直接复制本目录到任意位置。
 2. 加入 DSH profile（`dsh plugin` 会把参数转发给 profile 目录下的 pnpm）：
 
    ```bash
@@ -81,22 +114,23 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
          name: 'dsh-local-llm-controller'
    ```
 
-4. 按下一节配置 `~/.dsh/settings.yaml`。
-
-5. 重启 DSH Web。
+4. 重启 DSH Web（provider 由插件自动补建，无需手写；如需自定义见下节）。
 
 ## 配置（安装时必读）
 
-所有配置都写在 `~/.dsh/settings.yaml`，**修改后需重启 DSH 生效**（settings 在启动时装载）。
+配置按优先级合并（后者覆盖前者），**修改后需重启 DSH 生效**：
 
-### 1) `local-llm.config` —— 插件自身配置
+1. `~/.dsh/local-llm.config.json` —— **安装脚本写入，日常改这个就够了**（JSON，格式最简单）
+2. `~/.dsh/settings.yaml` 的 `local-llm.config` 段 —— 高级用法（想和别的配置放一起时）
+
+### 1) 配置文件字段
 
 | 字段 | 默认值 | 说明 |
 |---|---|---|
 | `llamaDir` | `F:/llama-b10488-bin-win-cuda-13.3-x64` | llama.cpp 可执行文件所在目录（**必须改成你自己的**） |
 | `serverExe` | `llama-server.exe` | 可执行文件名；Linux/macOS 用 `llama-server` |
 | `port` | `21113` | 服务端口；必须与 provider 的 `baseURL` 一致 |
-| `apiKey` | `ffsz1122` | `--api-key`；**必须与 DSH 的 `apiKeyEnv` 指向的环境变量值一致**（见 2） |
+| `apiKey` | 空（无鉴权） | 留空 = 不设 `--api-key`，仅监听 127.0.0.1 回环；设置后须与 `DSH_LOCAL_LLM_KEY` 一致 |
 | `settingsNs` | `llm-pi-ai` | contextWindow 同步目标 settings namespace |
 | `curlPath` | 自动探测 | 手动指定 curl 可执行文件（一般不填） |
 | `server.ngl` | `99` | GPU 卸载层数；CPU-only 构建请设 `0` |
@@ -129,7 +163,7 @@ local-llm:
   config:
     llamaDir: 'F:/llama-b10488-bin-win-cuda-13.3-x64'
     port: 21113
-    apiKey: 'ffsz1122'      # 与 DSH_LOCAL_LLM_KEY 一致
+    apiKey: ''              # 留空=无鉴权；设置后与 DSH_LOCAL_LLM_KEY 一致
     server:
       ngl: 99
       threads: 20
@@ -145,19 +179,20 @@ local-llm:
         providerKey: qwen-local
 ```
 
-### 2) DSH provider —— 会话模型接入
+### 2) DSH provider —— 会话模型接入（自动，无需手写）
 
-在 `llm-pi-ai.providers` 下注册两个 OpenAI 兼容 provider（名字与 `models.*.providerKey` 对应）：
+插件启动时会检查 `llm-pi-ai.providers`，缺失的 `qwen36-local` / `qwen-local` **自动补建**
+（只补缺失项，不覆盖你已有的配置），所以正常使用**不需要写这一段**。下面是补建结果的参考
+结构，想自定义（如改 displayName、maxTokens）时按此格式手工改即可：
 
 ```yaml
 llm-pi-ai:
   providers:
     qwen-local:                     # 9B
-      displayName: Qwen3.5-9B test
+      displayName: Qwen3.5-9B Local
       api: openai-completions
       baseURL: http://127.0.0.1:21113/v1
-      apiKeyEnv: DSH_LOCAL_LLM_KEY
-      defaultInput: [ text, image ]
+      defaultInput: [ text, image ] # 设置了 apiKey 时才有 apiKeyEnv: DSH_LOCAL_LLM_KEY
       reasoning: high
       models:
         - id: qwen3.5-9b
@@ -171,7 +206,6 @@ llm-pi-ai:
       displayName: Qwen3.6-35B-A3B Local
       api: openai-completions
       baseURL: http://127.0.0.1:21113/v1
-      apiKeyEnv: DSH_LOCAL_LLM_KEY
       defaultInput: [ text, image ]
       reasoning: high
       models:
@@ -186,15 +220,18 @@ llm-pi-ai:
 
 要点：
 
-- `apiKeyEnv` 指向的环境变量值 **必须与 `local-llm.config.apiKey` 相同**（同一把钥匙）。
+- **默认无鉴权**：`config.apiKey` 留空时，补建的 provider 不带 `apiKeyEnv`，请求不带
+  Authorization 头；llama-server 也只监听 `127.0.0.1` 且不设 `--api-key`。本机回环场景足够安全。
+- **设置了 `apiKey` 时**：插件会给补建的 provider 加上 `apiKeyEnv: DSH_LOCAL_LLM_KEY`，此时
+  环境变量 `DSH_LOCAL_LLM_KEY` 的值必须与 `config.apiKey` 相同（同一把钥匙）。
 - `contextWindow` 由插件在每次就绪时自动同步为当前预设的上下文长度，不需要手工维护。
 - 两个 provider 可共用同一个 `baseURL`/端口，靠 `-a` 别名区分当前加载的模型。
 
 ### 3) 环境变量
 
-| 变量 | 值 |
-|---|---|
-| `DSH_LOCAL_LLM_KEY` | 与 `local-llm.config.apiKey` 相同（如 `ffsz1122`） |
+| 变量 | 何时需要 | 值 |
+|---|---|---|
+| `DSH_LOCAL_LLM_KEY` | 仅当配置了 `apiKey` 时 | 与 `local-llm.config.apiKey` 相同 |
 
 ## 使用
 
