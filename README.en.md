@@ -32,7 +32,7 @@ Start and stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama
 
 > 🌐 The card UI follows the DSH Web language setting (English / 简体中文) — no extra config needed.
 
-| ① Settings → Plugins (config card) | ② Settings → Models (auto-registered) |
+| ① Settings → Plugins (config card) | ② Settings → Models (shown after Add to model list) |
 | :---: | :---: |
 | <img src="setting-plug.png" width="380" alt="Settings → Plugins"> | <img src="setting-model.png" width="380" alt="Settings → Models"> |
 
@@ -87,13 +87,13 @@ pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
    | Field | Notes |
    | --- | --- |
    | `llama.cpp directory` | Folder containing `llama-server.exe` (required) |
-   | `Port` | Default `55555`; saved changes re-sync the provider's `baseURL` on the **next start** |
-   | `API key` | Leave empty = no auth (loopback only); otherwise match `DSH_LOCAL_LLM_KEY` |
+   | `Port` | Default `55555`; **Add to model list** writes the provider `baseURL` from this value |
+   | `API key` | Leave empty = no auth (loopback only); a placeholder auth header is still written (required by the pi-ai client), a non-empty value is used as-is |
    | `35B / 9B folders` | Model folders; defaults are `llama.cpp dir\qwen3.6-35B-A3B` / `...\qwen3.5-9B` |
 
    > 🔍 Files are **auto-detected** in the folder: the file containing `mmproj` is the vision projector, the other is the main model — file names and quant suffixes do not matter.
 
-3. **Save config** → pick model (35B/9B), mode (text/vision), preset (fast/long-context) → **Start** (first load takes 40–90s, that's normal).
+3. **Save config** → **Add to model list** (writes both Qwen providers into Settings → Models, effective immediately) → pick model (35B/9B), mode (text/vision), preset (fast/long-context) → **Start** (first load takes 40–90s, that's normal).
 4. Once status shows **running**, pick **Qwen3.5-9B Local** or **Qwen3.6-35B-A3B Local** in the session and chat.
 5. **Stop** releases the port; on error the card shows the reason and recent logs.
 
