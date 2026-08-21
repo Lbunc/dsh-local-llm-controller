@@ -13,7 +13,10 @@
     "lib",
     "cordis.patch.yml",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "setting-plug.png",
+    "setting-model.png",
+    "useing.png"
   ],
   "repository": {
     "type": "git",
