@@ -85,8 +85,11 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
    == API 密钥 [回车 = 无鉴权（仅本机回环，推荐）]
    ```
 
-   脚本会自动完成：注册依赖到 DSH profile → 追加 `cordis.patch.yml` 注册行（幂等，不会重复）
-   → 写入配置 `~/.dsh/local-llm.config.json` → 检查 llama-server.exe 与默认模型文件是否存在。
+   脚本会自动完成：把插件本体复制到 `~/.dsh/profiles/<名字>/plugins/`（与 git 仓库解耦）
+   → 在 profile package.json 注册依赖 `link:./plugins/dsh-local-llm-controller`（相对路径，
+   profile 整体搬迁不断链）→ 刷新 node_modules → 追加 `cordis.patch.yml` 注册行（幂等）
+   → 写入配置 `~/.dsh/local-llm.config.json` → 检查 llama-server.exe 与默认模型文件。
+   重复运行会询问是否用仓库版本覆盖已安装的本体（`-Force` 直接覆盖）。
 
    非交互模式（适合脚本化）：
 
@@ -102,18 +105,29 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 ### 方式 B：手动安装
 
 1. 获取插件：`git clone <本仓库>` 或直接复制本目录到任意位置。
-2. 加入 DSH profile（`dsh plugin` 会把参数转发给 profile 目录下的 pnpm）：
 
-   ```bash
-   # 假设仓库在 D:/dsh-local-llm-controller
-   dsh plugin --profile web add D:/dsh-local-llm-controller
+2. 把插件本体复制到 profile 内（以 `web` profile 为例）：
+
+   ```powershell
+   $dst = "$HOME\.dsh\profiles\web\plugins\dsh-local-llm-controller"
+   New-Item -ItemType Directory -Force -Path $dst | Out-Null
+   Copy-Item .\lib $dst\lib -Recurse -Force
+   Copy-Item .\package.json, .\README.md, .\LICENSE $dst\ -Force
    ```
 
-   等价的手工做法：在 `~/.dsh/profiles/web/package.json` 的 `dependencies` 加
-   `"dsh-local-llm-controller": "link:D:/dsh-local-llm-controller"`，然后在
-   `~/.dsh/profiles/web` 下执行 `pnpm install`。
+3. 在 `~/.dsh/profiles/web/package.json` 的 `dependencies` 加（相对路径）：
 
-3. 在 `~/.dsh/profiles/web/cordis.patch.yml` 追加注册行：
+   ```json
+   "dsh-local-llm-controller": "link:./plugins/dsh-local-llm-controller"
+   ```
+
+   然后在 profile 目录下刷新依赖：
+
+   ```bash
+   cd ~/.dsh/profiles/web && pnpm install   # 或 dsh plugin --profile web install
+   ```
+
+4. 在 `~/.dsh/profiles/web/cordis.patch.yml` 追加注册行：
 
    ```yaml
    - insert:
@@ -121,7 +135,7 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
          name: 'dsh-local-llm-controller'
    ```
 
-4. 重启 DSH Web（provider 由插件自动补建，无需手写；如需自定义见下节）。
+5. 重启 DSH Web（provider 由插件自动补建，无需手写；如需自定义见下节）。
 
 ## 配置（安装时必读）
 
