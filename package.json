@@ -1,6 +1,6 @@
 {
   "name": "dsh-local-llm-controller",
-  "version": "0.2.2",
+  "version": "1.0.1",
   "description": "DSH plugin: start/stop a local llama.cpp llama-server (Qwen3.6-35B / Qwen3.5-9B, vision/text × fast/long-context) from the settings → plugins page, and keep the DSH provider contextWindow in sync.",
   "type": "module",
   "main": "lib/index.js",
@@ -40,14 +40,16 @@
     },
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-ui-settings"
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-locale"
       ],
       "platform": "web"
     }
   },
   "peerDependencies": {
     "react": "^18.2.0",
-    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7"
+    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.7"
   },
   "license": "MIT"
 }

@@ -30,6 +30,8 @@ Start and stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama
 
 **Getting started in three steps**: fill in the `llama.cpp` directory and port on the card → pick model / mode / preset → hit **Start**. Pick a local model in the session selector to chat; **Stop** releases the port. Status (running / error / PID / log) is shown live on the card.
 
+> 🌐 The card UI follows the DSH Web language setting (English / 简体中文) — no extra config needed.
+
 | ① Settings → Plugins (config card) | ② Settings → Models (auto-registered) |
 | :---: | :---: |
 | <img src="setting-plug.png" width="380" alt="Settings → Plugins"> | <img src="setting-model.png" width="380" alt="Settings → Models"> |
