@@ -99,7 +99,7 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 
 3. **重启 DSH Web**，打开 设置 → 插件 → Local LLM Controller 即可使用。
 
-> 插件启动时会**自动补建** `llm-pi-ai.providers.qwen36-local / qwen-local` 两个 provider
+> 插件启动时会**自动补建** `llm-pi-ai.providers.qwen36-local / qwen35-local` 两个 provider
 > （缺失才建，已有配置不动），所以你不必手写 provider 配置。
 
 ### 方式 B：手动安装
@@ -197,19 +197,19 @@ local-llm:
         file: 'F:/models/Qwen3.5-9B-Q4_K_M.gguf'
         mmproj: 'F:/models/mmproj-Qwen3.5-9B-BF16.gguf'
         alias: qwen3.5-9b
-        providerKey: qwen-local
+        providerKey: qwen35-local
 ```
 
 ### 2) DSH provider —— 会话模型接入（自动，无需手写）
 
-插件启动时会检查 `llm-pi-ai.providers`，缺失的 `qwen36-local` / `qwen-local` **自动补建**
+插件启动时会检查 `llm-pi-ai.providers`，缺失的 `qwen36-local` / `qwen35-local` **自动补建**
 （只补缺失项，不覆盖你已有的配置），所以正常使用**不需要写这一段**。下面是补建结果的参考
 结构，想自定义（如改 displayName、maxTokens）时按此格式手工改即可：
 
 ```yaml
 llm-pi-ai:
   providers:
-    qwen-local:                     # 9B
+    qwen35-local:                     # 9B
       displayName: Qwen3.5-9B Local
       api: openai-completions
       baseURL: http://127.0.0.1:67913/v1

@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
   dsh-local-llm-controller 一键安装向导（Windows）
@@ -11,7 +11,7 @@
     4. 写入配置 ~/.dsh/local-llm.config.json（llama.cpp 目录 / 端口 / 密钥）
 
   插件启动时会自动在 DSH settings 里补建两个 provider（qwen36-local /
-  qwen-local），无需手写 provider 配置。完成后重启 DSH Web 即可。
+  qwen35-local），无需手写 provider 配置。完成后重启 DSH Web 即可。
   重新运行本脚本会询问是否用仓库版本覆盖已安装的本体（-Force 直接覆盖）。
 
 .PARAMETER ProfileName
