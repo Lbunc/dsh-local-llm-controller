@@ -19,7 +19,7 @@
   llama.cpp 目录（含 llama-server.exe）。不传则交互询问。
 
 .PARAMETER Port
-  服务端口（默认 21113）
+  服务端口（默认 67913）
 
 .PARAMETER ApiKey
   API 密钥。留空 = 无鉴权（仅监听 127.0.0.1 回环，推荐）。
@@ -77,9 +77,9 @@ Write-Ok $LlamaDir
 
 # ---- 3) 端口与密钥 ----
 if (-not $Port) {
-  $Port = Read-Host '   服务端口 [回车 = 21113]'
+  $Port = Read-Host '   服务端口 [回车 = 67913]'
 }
-if (-not $Port) { $Port = 21113 }
+if (-not $Port) { $Port = 67913 }
 $PortInt = 0
 if (-not [int]::TryParse([string]$Port, [ref]$PortInt)) { Write-Error "端口不是数字: $Port" }
 
@@ -101,16 +101,16 @@ if (-not $SkipChecks) {
   } else {
     Write-Ok "找到 $exe"
   }
-  $defaultModels = @(
-    @('qwen3.6-35B-A3B', 'Qwen3.6-35B-A3B-Uncensored-IQ4_NL.gguf'),
-    @('qwen3.6-35B-A3B', 'mmproj-Qwen3.6-35B-A3B-Uncensored-f16.gguf'),
-    @('qwen3.5-9B', 'Qwen3.5-9B-Uncensored-Q4_K_M.gguf'),
-    @('qwen3.5-9B', 'mmproj-Qwen3.5-9B-Uncensored-BF16.gguf')
-  )
-  foreach ($m in $defaultModels) {
-    $p = Join-Path $LlamaDir (Join-Path $m[0] $m[1])
-    if (-not (Test-Path $p)) {
-      Write-Warn "未找到默认模型文件 $p （若你的目录结构不同，可忽略，启动前改 local-llm.config.json 即可）"
+  # 模型目录检查（文件名不限，只要有 gguf 即可，用户可自定义路径）
+  $modelDirs = @('qwen3.6-35B-A3B', 'qwen3.5-9B')
+  foreach ($d in $modelDirs) {
+    $dir = Join-Path $LlamaDir $d
+    if (-not (Test-Path $dir)) {
+      Write-Warn "未找到模型目录 $dir （可忽略：只要 local-llm.config.json 里的路径正确即可）"
+    } elseif (-not (Get-ChildItem $dir -Filter '*.gguf' -ErrorAction SilentlyContinue)) {
+      Write-Warn "模型目录 $dir 下没有 .gguf 文件（可忽略：只要 local-llm.config.json 里的路径正确即可）"
+    } else {
+      Write-Ok "找到模型目录 $dir"
     }
   }
 }

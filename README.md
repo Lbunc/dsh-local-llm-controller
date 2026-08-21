@@ -51,14 +51,21 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 
 | 文件 | 说明 | 体积参考 |
 |---|---|---|
-| `Qwen3.6-35B-A3B-Uncensored-IQ4_NL.gguf` | 35B MoE 4bit | ~20GB |
-| `mmproj-Qwen3.6-35B-A3B-Uncensored-f16.gguf` | 35B 视觉投影 | ~1.5GB |
-| `Qwen3.5-9B-Uncensored-Q4_K_M.gguf` | 9B dense 4bit | ~6GB |
-| `mmproj-Qwen3.5-9B-Uncensored-BF16.gguf` | 9B 视觉投影 | ~700MB |
+| `Qwen3.6-35B-A3B-IQ4_NL.gguf` | 35B MoE 4bit | ~20GB |
+| `mmproj-Qwen3.6-35B-A3B-f16.gguf` | 35B 视觉投影 | ~1.5GB |
+| `Qwen3.5-9B-Q4_K_M.gguf` | 9B dense 4bit | ~6GB |
+| `mmproj-Qwen3.5-9B-BF16.gguf` | 9B 视觉投影 | ~700MB |
 
 > 任意 GGUF + 对应 mmproj 均可，只要在 `local-llm.config.models` 里把路径指对。
 
 ## 安装
+
+> **关于 `dsh plugin`**：`dsh plugin --profile <名字> <参数>` 只是把参数**原样转发给 profile
+> 目录下的 pnpm**（等价于在 profile 里执行 `pnpm add xxx`，装依赖）。DSH 启动时只加载
+> `dsh.profile.bundles` 里声明的包 + `cordis.patch.yml` 注册的插件，**不会自动发现
+> node_modules 里装了什么**——所以第三方插件永远需要两步：装依赖 + 写注册行。
+> 别人的"一行命令"要么是官方 bundle 插件（已经声明在 bundles 里，只需装依赖），
+> 要么是把这两步合并成一句话。本仓库的 `install.ps1` 就是把这两步 + 配置合并成一条命令。
 
 ### 方式 A：一键安装（推荐，Windows）
 
@@ -74,7 +81,7 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
    ```
    == llama.cpp 目录
       llama.cpp 目录（包含 llama-server.exe 的文件夹）: F:\llama.cpp
-   == 服务端口 [回车 = 21113]
+   == 服务端口 [回车 = 67913]
    == API 密钥 [回车 = 无鉴权（仅本机回环，推荐）]
    ```
 
@@ -129,7 +136,7 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 |---|---|---|
 | `llamaDir` | `F:/llama-b10488-bin-win-cuda-13.3-x64` | llama.cpp 可执行文件所在目录（**必须改成你自己的**） |
 | `serverExe` | `llama-server.exe` | 可执行文件名；Linux/macOS 用 `llama-server` |
-| `port` | `21113` | 服务端口；必须与 provider 的 `baseURL` 一致 |
+| `port` | `67913` | 服务端口；必须与 provider 的 `baseURL` 一致 |
 | `apiKey` | 空（无鉴权） | 留空 = 不设 `--api-key`，仅监听 127.0.0.1 回环；设置后须与 `DSH_LOCAL_LLM_KEY` 一致 |
 | `settingsNs` | `llm-pi-ai` | contextWindow 同步目标 settings namespace |
 | `curlPath` | 自动探测 | 手动指定 curl 可执行文件（一般不填） |
@@ -145,8 +152,8 @@ DSH（DeepSeek Harness）插件：在「设置 → 插件」页面一键启停�
 
 | key | 默认 file | 默认 mmproj |
 |---|---|---|
-| `35b` | `{llamaDir}/qwen3.6-35B-A3B/Qwen3.6-35B-A3B-Uncensored-IQ4_NL.gguf` | `{llamaDir}/qwen3.6-35B-A3B/mmproj-Qwen3.6-35B-A3B-Uncensored-f16.gguf` |
-| `9b` | `{llamaDir}/qwen3.5-9B/Qwen3.5-9B-Uncensored-Q4_K_M.gguf` | `{llamaDir}/qwen3.5-9B/mmproj-Qwen3.5-9B-Uncensored-BF16.gguf` |
+| `35b` | `{llamaDir}/qwen3.6-35B-A3B/Qwen3.6-35B-A3B-IQ4_NL.gguf` | `{llamaDir}/qwen3.6-35B-A3B/mmproj-Qwen3.6-35B-A3B-f16.gguf` |
+| `9b` | `{llamaDir}/qwen3.5-9B/Qwen3.5-9B-Q4_K_M.gguf` | `{llamaDir}/qwen3.5-9B/mmproj-Qwen3.5-9B-BF16.gguf` |
 
 配置示例（`{llamaDir}` 占位符在 `file`/`mmproj` 里可用，会被替换为 `llamaDir`）：
 
@@ -162,7 +169,7 @@ local-llm:
   logTail: ""
   config:
     llamaDir: 'F:/llama-b10488-bin-win-cuda-13.3-x64'
-    port: 21113
+    port: 67913
     apiKey: ''              # 留空=无鉴权；设置后与 DSH_LOCAL_LLM_KEY 一致
     server:
       ngl: 99
@@ -173,8 +180,8 @@ local-llm:
         alias: qwen3.6-35b-a3b
         providerKey: qwen36-local
       9b:
-        file: 'F:/models/Qwen3.5-9B-Uncensored-Q4_K_M.gguf'
-        mmproj: 'F:/models/mmproj-Qwen3.5-9B-Uncensored-BF16.gguf'
+        file: 'F:/models/Qwen3.5-9B-Q4_K_M.gguf'
+        mmproj: 'F:/models/mmproj-Qwen3.5-9B-BF16.gguf'
         alias: qwen3.5-9b
         providerKey: qwen-local
 ```
@@ -191,12 +198,12 @@ llm-pi-ai:
     qwen-local:                     # 9B
       displayName: Qwen3.5-9B Local
       api: openai-completions
-      baseURL: http://127.0.0.1:21113/v1
+      baseURL: http://127.0.0.1:67913/v1
       defaultInput: [ text, image ] # 设置了 apiKey 时才有 apiKeyEnv: DSH_LOCAL_LLM_KEY
       reasoning: high
       models:
         - id: qwen3.5-9b
-          name: Qwen3.5-9B Uncensored
+          name: Qwen3.5-9B
           contextWindow: 32768      # 插件就绪后自动同步，此处只是初始值
           maxTokens: 8192
           reasoningEfforts:
@@ -205,12 +212,12 @@ llm-pi-ai:
     qwen36-local:                   # 35B
       displayName: Qwen3.6-35B-A3B Local
       api: openai-completions
-      baseURL: http://127.0.0.1:21113/v1
+      baseURL: http://127.0.0.1:67913/v1
       defaultInput: [ text, image ]
       reasoning: high
       models:
         - id: qwen3.6-35b-a3b
-          name: Qwen3.6-35B-A3B Uncensored
+          name: Qwen3.6-35B-A3B
           contextWindow: 32768
           maxTokens: 12288          # 必须 > 35B 的 --reasoning-budget 2048 + 期望答案长度
           reasoningEfforts:
@@ -254,41 +261,21 @@ llm-pi-ai:
 
 ## 实测数据与结论（35B，llama.cpp b10488）
 
-> 来源：作者在 RTX 4070 SUPER 12GB（12282 MiB）+ 32GB 内存 + i5-13600KF（6P+8E，20 线程）上的完整扫描实验
-> （`llama.cpp b10488`，CUDA 13.3 构建）。数据为干净环境复测结果。以下全部为 **35B 实测**；9B 未做专项扫描。
-> 完整报告、原始数据与全部测试脚本（脱敏版，路径以 `{llama-home}` / `{work-dir}` / `{dsh-home}` 占位）见
+> 环境：RTX 4070 SUPER 12GB + 32GB 内存 + i5-13600KF（20 线程），CUDA 13.3 构建，干净环境复测。
+> 以下为 **35B 实测**（9B 未做专项扫描）；完整报告、原始数据与测试脚本（脱敏版）见
 > [docs/measurements/](docs/measurements/)。
 
-### 上下文 vs 速度（ncmoe 20，纯文本）
+| 配置 | 空闲 shared (MiB) | 大图编码 | 深填充 t/s | 结论 |
+|---|---|---|---|---|
+| ncmoe 20 @ 32K | ~150 | — | ~70 | 基准：远低于溢出点，全程不掉速 |
+| ncmoe 20 @ 64K | 159~180 | — | ~70（52.7k） | 仍可用，仅掉速 ~4-6% |
+| ncmoe 20 @ 80K | **303** | — | 63.5（70.3k） | KV 开始溢出共享内存，不再建议 |
+| ncmoe 22 @ 128K | 227~260 | — | 45~54（118.6k） | 长上下文档：ncmoe 22 的可靠上限（196608 是硬断崖，19.6 t/s） |
+| ncmoe 24 @ 32K 视觉 | 132~149 | **11.8s** | 62 | 视觉最优：mmproj 完整进 GPU，无溢出 |
+| ncmoe 24 @ 96K 视觉 | 198 | **15.2s** | 49.5 | 综合最优：3× 上下文 + 可用图片速度 |
+| ncmoe 24 @ 128K 视觉 | 308 | 48.9s | 39.1 | 显存紧，图片编码退化 |
 
-| 上下文 C | 空闲 shared (MiB) | short t/s | deep t/s（填充深度） |
-|---|---|---|---|
-| 40960 | 142 | 66.2 | 64.1（30.8k） |
-| 49152 | 147~151 | 69.3 / 81.0 | 72.7 / 74.3（39.5k） |
-| 57344 | 151~159 | 71.1 / 82.8 | 69.9 / 70.7（43.9k） |
-| 65536 | 159~180 | 79.0 / 84.0 | 69.3 / 69.8（52.7k） |
-| 81920 | **303** | 83.5 | 63.5（70.3k） |
-
-**结论**：57344~65536 仅掉速 ~4-6%；81920 起 KV 缓冲溢出共享内存（shared 跳升至 303MB），不再建议。`shared 空闲值 = KV 溢出的最可靠物理信号`。
-
-### 视觉编码器（mmproj f16 858MB，-c 32768）
-
-| 配置 | 空闲 ded/shared (MiB) | 小图编码 | 大图编码 | 文本 deep t/s | 结论 |
-|---|---|---|---|---|---|
-| ncmoe 20 @32K | 11801~11847 / **703~1072** | 8.7~10.7s | 73~81.5s | 66~67.8 | mmproj 落共享内存，不可用 |
-| ncmoe 22 @32K | 11531~11633 / 147~148 | 2.7s | 18.6~23.2s | 60.7~61.2 | 可用，编码时 shared 涨 |
-| **ncmoe 24 @32K** | 10661~10733 / 132~149 | **2.9s** | **11.8~11.9s** | 61.9~62.6 | **最优**：无溢出 |
-| **ncmoe 24 @96K** | 11455 / 198 | — | **15.2s** | 49.5 | **综合最优**：3× 上下文 |
-| ncmoe 24 @128K | 11794 / 308 | — | 48.9s | 39.1 | 显存紧，编码退化 |
-
-**结论**：视觉分水岭是 **ncmoe 24**（mmproj 858MB + 编码期缓冲需 ~1.6GB 显存余量，只有 N=24 满足）；图片 token 开销：小图 ≈1024、大图（4.2MB 照片）≈3032。这就是预设矩阵里 35B 视觉档位取 24 的依据。
-
-### 机制与结论
-
-1. **KV 溢出机制**：KV 缓冲启动时按层分配；权重 + KV 超过 12GB 时部分 KV 层落共享内存，生成时每步跨 PCIe 读 KV → 速度骤降（ncmoe<20 时 25 t/s、196608 时 19.6 t/s）。
-2. **ncmoe 机制**：`-ncmoe N` = 前 N 层专家放 CPU，其余 GPU。N 越大腾出显存越多（每 2 层 ~0.9GB），同填充速度略降 ~3-5%。ncmoe 22 可开 131072（腾 ~955MB 显存）；**196608 是硬断崖**。
-3. **掉速曲线是模型特性**：≈74（≤40k）→ 70（53k）→ 63（70k）→ 60（88k）→ 54（119k）t/s，任何配置都躲不开；上下文配置本身只在溢出点之后才影响速度。
-4. **档位选择理由**：32K 远低于任何溢出点（~70+ t/s 全程）；长上下文 128K = ncmoe 22 的可靠上限；视觉取 ncmoe 24。思考预算 2048 + maxTokens 12288 保证答案不被截断（无预算时复杂题思考 9000+ tokens、130s+、答案被截断）。
+**结论**：KV 缓冲启动时按层分配，权重 + KV 超过 12GB 时部分 KV 层落共享内存，生成时每步跨 PCIe 读 KV 导致速度骤降——`空闲 shared 值 = 溢出的最可靠信号`，这也是预设矩阵档位（32K 稳妥 / 128K=ncmoe 22 上限 / 视觉必须 ncmoe 24）的选定依据；掉速曲线（74→70→63→60→54 t/s @40k→53k→70k→88k→119k 填充）是模型特性，任何配置都躲不开，上下文配置只在溢出点之后才影响速度。
 
 ## 已知限制
 
@@ -306,7 +293,7 @@ llm-pi-ai:
 | 一直「启动中…」直到超时 | 模型体积大加载慢属正常；确认 `/health` 可达、curl 可用 |
 | CPU-only 机器 | `config.server.ngl: 0`；9B 可行，35B 128K 需大内存 |
 | contextWindow 没有同步 | 检查 `settingsNs` 与 `models.*.providerKey` 是否与 yaml 实际键一致 |
-| 停止后端口仍占用 | 有其他进程占用 21113（可用 `netstat -ano` 查） |
+| 停止后端口仍占用 | 有其他进程占用 67913（可用 `netstat -ano` 查） |
 
 ## License
 
