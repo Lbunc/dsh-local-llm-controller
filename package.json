@@ -17,7 +17,8 @@
     "LICENSE",
     "setting-plug.png",
     "setting-model.png",
-    "useing.png"
+    "useing.png",
+    "params.png"
   ],
   "scripts": {
     "test": "node test/logic.test.mjs"
