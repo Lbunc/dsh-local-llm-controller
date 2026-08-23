@@ -1,7 +1,7 @@
 {
   "name": "dsh-local-llm-controller",
-  "version": "1.1.0",
-  "description": "DSH plugin: start/stop a local llama.cpp llama-server (Qwen3.6-35B / Qwen3.5-9B, vision/text × fast/long-context) from the settings → plugins page, and keep the DSH provider contextWindow in sync.",
+  "version": "2.0.0",
+  "description": "DSH plugin: start/stop a local llama.cpp llama-server from the settings → plugins page — two model slots (A/B) with per-slot model-file selection, eight editable launch-parameter groups (text/vision × fast/long × 2 slots), and DSH provider registration with names derived from the chosen model file.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -19,6 +19,9 @@
     "setting-model.png",
     "useing.png"
   ],
+  "scripts": {
+    "test": "node test/logic.test.mjs"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Lbunc/dsh-local-llm-controller.git"
