@@ -2,6 +2,8 @@
 
 # 🚀 dsh-local-llm-controller
 
+<img src="images/wallpaper.jpg" alt="dsh-local-llm-controller" width="100%">
+
 **DSH 插件：设置页一键启停本地 llama.cpp，让本地大模型成为 DSH 会话模型**
 
 [![npm version](https://img.shields.io/npm/v/dsh-local-llm-controller?color=blue)](https://www.npmjs.com/package/dsh-local-llm-controller)
@@ -34,19 +36,22 @@
    - `llama.cpp 目录`：`llama-server.exe` 所在文件夹（必填）
    - `端口`：默认 55555（「添加到模型列表」按当前值写入 provider 的 baseURL）
    - `密钥`：留空 = 无鉴权（仅回环）；留空也会写入占位鉴权头（pi-ai 客户端要求）
+
+   <p align="center"><img src="images/setting-plug.png" width="420" alt="设置 → 插件（配置卡片）"></p>
+
 2. **槽位 A / B 配置**：各填一个**模型文件夹路径**（内含模型 GGUF，含视觉的还要有 mmproj）→ 点「**保存配置**」。
 3. **添加模型到模型列表**：保存后文件夹内所有模型 GGUF 变成气泡（mmproj 不会出现在列表，视觉时自动挂载）→ 点选一个→ 点「**保存配置**」→ 点「**添加到模型列表**」。模型名由文件名**自动派生**；要改名/改显示名去 **设置 → 模型** 页改。
+
+   <p align="center"><img src="images/setting-model.png" width="420" alt="设置 → 模型（添加到模型列表后出现）"></p>
+
 4. **启动参数**（8 组 = 槽位 × 文本/视觉 × 快速/长上下文）：「启动参数（当前组合）」显示正在编辑哪一组，每行 = `参数` + `值` 两个输入框，支持 **+ 添加参数行** 与 × **删除行**。基础参数已预填（`-ngl`/`-t`/`-c`/采样…），推荐的高级参数组合见项目文档与 [llama.cpp 参数](https://github.com/ggml-org/llama.cpp)；`-m`/`-a`/`--port`/`--host`/`--api-key` 及视觉时的 `--mmproj` 由插件自动管理，无需在参数行里添加。
+
+   <p align="center"><img src="images/params.png" width="420" alt="启动参数行（8 组之一）"></p>
+
 5. **启动区**：选槽位 A/B → 选模式（文本/视觉）→ 选预设（快速/长上下文）→ 点「**启动**」
 6. **对话**：状态变「运行中」后，会话底部选择对应的本地模型即可；「停止」释放端口；出错时卡片显示原因与最近日志。
 
-|                     ① 设置 → 插件（配置卡片）                    |                 ② 启动参数行（8 组之一）                 |
-| :----------------------------------------------------: | :--------------------------------------------: |
-| <img src="setting-plug.png" width="380" alt="设置 → 插件"> | <img src="params.png" width="380" alt="启动参数行"> |
-
-|                  ③ 设置 → 模型（添加到模型列表后出现）                  |
-| :-----------------------------------------------------: |
-| <img src="setting-model.png" width="380" alt="设置 → 模型"> |
+   <p align="center"><img src="images/useing.png" width="420" alt="会话中选择本地模型对话"></p>
 
 ### ⚠️ 注意事项
 
@@ -67,8 +72,8 @@
 # dsh 已在环境变量（全局安装过 @deepseek-ai/dsh）
 dsh plugin --profile web add dsh-local-llm-controller
 
-# dsh 不在环境变量时（平时用 dlx/npx 临时运行 DSH），等价命令：
-pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
+# dsh 命令未全局安装（@deepseek-ai/dsh 不在 PATH）时，用 npx 临时拉取 CLI（Node 自带，无需额外安装）：
+npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 ```
 
 装完**重启 DSH Web**（本包声明了 `dsh.bundle`，注册自动完成，无需手动配置）。卡片出现在 **设置 → 插件 → Local LLM Controller**。
@@ -88,52 +93,6 @@ pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 | `llm-pi-ai.providers.*`（派生键的本地条目） | **建议保留**：改用手动方式跑同端口服务时仍可用；确实不用再删 |
 | `~/.dsh/local-llm.config.json`    | 旧安装脚本时代的遗留，可删                    |
 | 模型文件 / llama.cpp 本体               | 与插件无关，保留                         |
-
-***
-
-## 🖥️ 环境需求
-
-| 项             | 要求                                                                         |
-| ------------- | -------------------------------------------------------------------------- |
-| **DSH**       | ≥ 0.1.0-rc.7，含 web profile                                                 |
-| **llama.cpp** | `llama-server` 可执行文件（作者验证 0.1.2-dev build 10488，CUDA 13.3 构建；CPU 构建也能跑小模型） |
-| **模型文件**      | 每个槽位一个模型 GGUF；视觉再配同文件夹 mmproj（文件名含 `mmproj`）                               |
-| **硬件**        | 作者环境 RTX 4070 SUPER 12GB + 32GB 内存（i5-13600KF）；长上下文需充足内存                   |
-| **系统**        | Windows 为主（Linux/macOS 把 `serverExe` 改为 `llama-server`）                    |
-
-**推荐模型文件**（v1.x 实测基准，体积参考）：
-
-| 文件                              | 用途       | 体积      |
-| ------------------------------- | -------- | ------- |
-| `Qwen3.6-35B-A3B`（IQ4\_NL GGUF） | 35B 主模型  | \~20GB  |
-| `mmproj`（Qwen3.6-35B-A3B）       | 35B 视觉投影 | \~1.5GB |
-| `Qwen3.5-9B`（Q4\_K\_M GGUF）     | 9B 主模型   | \~6GB   |
-| `mmproj`（Qwen3.5-9B）            | 9B 视觉投影  | \~700MB |
-
-***
-
-## 🧪 测试环境与实测数据（v1.x 基准）
-
-| 项         | 值                                                                             |
-| --------- | ----------------------------------------------------------------------------- |
-| GPU       | RTX 4070 SUPER 12GB（12282 MiB）                                                |
-| CPU       | i5-13600KF（6P + 8E，20 线程）                                                     |
-| 内存        | 32GB                                                                          |
-| llama.cpp | 0.1.2-dev（build 10488），CUDA 13.3 构建                                           |
-| DSH       | 0.1.0-rc.7 → 0.1.1-rc.2                                                       |
-| 模型        | Qwen3.6-35B-A3B（IQ4\_NL，18.4GB）+ f16 mmproj；Qwen3.5-9B（Q4\_K\_M）+ BF16 mmproj |
-
-**35B 实测（上下文/视觉档位）**：
-
-| 配置                    | 空闲 shared (MiB) | 大图编码      | 深填充速度      | 结论                                   |
-| --------------------- | --------------- | --------- | ---------- | ------------------------------------ |
-| ncmoe 20 @ 32K        | \~150           | —         | \~70 t/s   | ✅ 基准：远离溢出点，全程不掉速                     |
-| ncmoe 20 @ 80K        | **303**         | —         | 63.5 t/s   | ⚠️ KV 开始溢出共享内存，不再建议                  |
-| ncmoe 22 @ 128K       | 227\~260        | —         | 45\~54 t/s | 📌 长上下文档：ncmoe 22 的可靠上限（196608 是硬断崖） |
-| **ncmoe 24 @ 32K 视觉** | 132\~149        | **11.8s** | 62 t/s     | 🏆 视觉最优：mmproj 完整进 GPU               |
-| **ncmoe 24 @ 96K 视觉** | 198             | **15.2s** | 49.5 t/s   | 🏆 综合最优：3× 上下文 + 可用图片速度              |
-
-**结论**：KV 缓冲按层分配，权重 + KV 超 12GB 时部分 KV 层落共享内存，生成时每步跨 PCIe 读 KV → 速度骤降，**空闲 shared 值是最可靠的溢出信号**。完整报告、原始数据与测试脚本（脱敏版）见 [docs/measurements/](docs/measurements/)。
 
 ***
 
@@ -159,7 +118,14 @@ pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 9B · 视觉 · 长上下文 : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
 ```
 
-> 📌 35B 的 `-ncmoe`（MoE 专家卸载数）与 `--reasoning-budget` 为实测优化项；长上下文可靠上限 `-c 131072`（35B，ncmoe 22）/ `-c 65536`（9B）——`-c 196608` 是硬断崖（KV 溢出共享内存）。对应实测数据见上文。
+> 📌 35B 的 `-ncmoe`（MoE 专家卸载数）与 `--reasoning-budget` 为实测优化项；长上下文可靠上限 `-c 131072`（35B，ncmoe 22）/ `-c 65536`（9B）——`-c 196608` 是硬断崖（KV 溢出共享内存）。更完整的实测数据、选型结论与实验方法见下方「推荐阅读」。
+
+***
+
+## 📚 推荐阅读
+
+- [本地模型调优全历程终版存档](docs/measurements/ctx_scan_report.md)：35B / 9B / 27B 多模型实测对比、调优结论、选型建议与长上下文安全上限汇总。
+- [**llm-experiment-design · DSH 调优 Skill**](docs/llm-experiment-design/SKILL.md)：给新 GGUF 做深度调优用的 Skill——按「运行时探查 → 必要性驱动扫描 → 四件套测量 → 能力验证」流程安排脚本与判读，最终输出一套可复现的最优启动参数（MoE/dense 通用）。
 
 ***
 

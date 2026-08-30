@@ -2,6 +2,8 @@
 
 # 🚀 dsh-local-llm-controller
 
+<img src="images/wallpaper.jpg" alt="dsh-local-llm-controller" width="100%">
+
 **A DSH plugin: start/stop a local llama.cpp server from the settings page — make your local model the DSH session model**
 
 [![npm version](https://img.shields.io/npm/v/dsh-local-llm-controller?color=blue)](https://www.npmjs.com/package/dsh-local-llm-controller)
@@ -34,19 +36,22 @@ Start/stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-ser
    - `llama.cpp directory`: where `llama-server.exe` lives (required)
    - `Port`: default 55555 (「Add to model list」writes the current value into the provider baseURL)
    - `API key`: blank = no auth (loopback only); a placeholder auth header is still written (pi-ai client requires one), and a set value is used on both sides
+
+   <p align="center"><img src="images/setting-plug.png" width="420" alt="Settings → Plugins (config card)"></p>
+
 2. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
 3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**.
+
+   <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
+
 4. **Launch parameters** (8 groups = slot × text/vision × fast/long): the group being edited is shown as「Launch args (current combo)」; each row is a `flag` + `value` pair of inputs, with **+ add row** and **× delete row**. Basics are prefilled (`-ngl`/`-t`/`-c`/sampling…); see the [llama.cpp docs](https://github.com/ggml-org/llama.cpp) and the recommended sets below. `-m`/`-a`/`--port`/`--host`/`--api-key` and vision-mode `--mmproj` are managed automatically — never add them manually.
+
+   <p align="center"><img src="images/params.png" width="420" alt="Launch parameter rows (one of 8 groups)"></p>
+
 5. **Launch zone**: choose slot A/B → mode (text/vision) → preset (fast/long) → click **「Start」**.
 6. **Chat**: once the status turns Running, pick the local model at the bottom of a session; **「Stop」** releases the port; errors show the reason and recent logs on the card.
 
-| ① Settings → Plugins (config card) | ② Launch parameter rows (one of 8 groups) |
-| :---: | :---: |
-| <img src="setting-plug.png" width="380" alt="Settings → Plugins"> | <img src="params.png" width="380" alt="Launch parameter rows"> |
-
-| ③ Settings → Models (after Add to model list) |
-| :---: |
-| <img src="setting-model.png" width="380" alt="Settings → Models"> |
+   <p align="center"><img src="images/useing.png" width="420" alt="Pick the local model in a session to chat"></p>
 
 ### ⚠️ Notes
 
@@ -67,8 +72,8 @@ Start/stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-ser
 # dsh is on PATH (globally installed @deepseek-ai/dsh)
 dsh plugin --profile web add dsh-local-llm-controller
 
-# equivalent when dsh is not on PATH (run via dlx/npx):
-pnpm dlx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
+# when dsh CLI is not globally installed (@deepseek-ai/dsh not on PATH), use npx (bundled with Node, no extra install) to fetch the CLI on the fly:
+npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 ```
 
 Then **restart DSH Web** — the package declares `dsh.bundle`, registration is automatic, no manual config rows. The card appears at **Settings → Plugins → Local LLM Controller**.
@@ -90,52 +95,6 @@ Then **restart DSH Web** — the package declares `dsh.bundle`, registration is 
 | `llm-pi-ai.providers.*` (derived-key local entries) | **Keep recommended**: still usable when running the same port manually; delete if truly unused |
 | `~/.dsh/local-llm.config.json` | Leftover from the old installer era, safe to delete |
 | Model files / llama.cpp itself | Not the plugin's concern, keep |
-
-***
-
-## 🖥️ Requirements
-
-| Item | Requirement |
-| --- | --- |
-| **DSH** | ≥ 0.1.0-rc.7, with a web profile |
-| **llama.cpp** | a `llama-server` executable (author-tested 0.1.2-dev build 10488, CUDA 13.3 build; CPU builds run small models too) |
-| **Model files** | one model GGUF per slot; an mmproj in the same folder for vision (file name must contain `mmproj`) |
-| **Hardware** | author environment: RTX 4070 SUPER 12GB + 32GB RAM (i5-13600KF); long context needs plenty of memory |
-| **OS** | Windows first (Linux/macOS: set `serverExe` to `llama-server`) |
-
-**Recommended model files** (v1.x measured baseline, sizes approximate):
-
-| File | Purpose | Size |
-| --- | --- | --- |
-| `Qwen3.6-35B-A3B` (IQ4_NL GGUF) | 35B main model | ~20GB |
-| `mmproj` (Qwen3.6-35B-A3B) | 35B vision projector | ~1.5GB |
-| `Qwen3.5-9B` (Q4_K_M GGUF) | 9B main model | ~6GB |
-| `mmproj` (Qwen3.5-9B) | 9B vision projector | ~700MB |
-
-***
-
-## 🧪 Test environment & measured data (v1.x baseline)
-
-| Item | Value |
-| --- | --- |
-| GPU | RTX 4070 SUPER 12GB (12282 MiB) |
-| CPU | i5-13600KF (6P + 8E, 20 threads) |
-| RAM | 32GB |
-| llama.cpp | 0.1.2-dev (build 10488), CUDA 13.3 build |
-| DSH | 0.1.0-rc.7 → 0.1.1-rc.2 |
-| Models | Qwen3.6-35B-A3B (IQ4_NL, 18.4GB) + f16 mmproj; Qwen3.5-9B (Q4_K_M) + BF16 mmproj |
-
-**35B measurements (context/vision tiers)**:
-
-| Config | Idle shared (MiB) | Large-image encode | Deep-fill speed | Verdict |
-| --- | --- | --- | --- | --- |
-| ncmoe 20 @ 32K | ~150 | — | ~70 t/s | ✅ Baseline: far from overflow, no degradation |
-| ncmoe 20 @ 80K | **303** | — | 63.5 t/s | ⚠️ KV starts spilling into shared memory, not recommended |
-| ncmoe 22 @ 128K | 227~260 | — | 45~54 t/s | 📌 Reliable ceiling for long context (196608 is the hard cliff) |
-| **ncmoe 24 @ 32K vision** | 132~149 | **11.8s** | 62 t/s | 🏆 Best vision: mmproj fully on GPU |
-| **ncmoe 24 @ 96K vision** | 198 | **15.2s** | 49.5 t/s | 🏆 Best overall: 3× context + usable image speed |
-
-**Conclusion**: KV buffers are allocated per layer — when weights + KV exceed 12GB, some KV layers spill into shared memory and every generation step reads KV over PCIe, so speed collapses; **idle shared memory is the most reliable overflow signal**. Full report, raw data and (redacted) test scripts: [docs/measurements/](docs/measurements/).
 
 ***
 
@@ -161,7 +120,14 @@ Then **restart DSH Web** — the package declares `dsh.bundle`, registration is 
 9B · vision · long      : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
 ```
 
-> 📌 For the 35B, `-ncmoe` (MoE expert offload count) and `--reasoning-budget` are measured optimizations; reliable long-context ceilings are `-c 131072` (35B, ncmoe 22) / `-c 65536` (9B) — `-c 196608` is the hard cliff (KV spills into shared memory). See the measurements above.
+> 📌 For the 35B, `-ncmoe` (MoE expert offload count) and `--reasoning-budget` are measured optimizations; reliable long-context ceilings are `-c 131072` (35B, ncmoe 22) / `-c 65536` (9B) — `-c 196608` is the hard cliff (KV spills into shared memory). For full measurements, model-selection conclusions, and the experiment methodology, see **Further reading** below.
+
+***
+
+## 📖 Further reading
+
+- [Tuning Report Archive (35B / 9B / 27B)](docs/measurements/ctx_scan_report.md): Multi-model real-world measurements, tuning conclusions, hardware selection advice, and the long-context safe-ceiling summary.
+- [**llm-experiment-design · DSH Tuning Skill**](docs/llm-experiment-design/SKILL.md): The Skill for deep-tuning a new GGUF — it schedules scripts and interprets results via the standard pipeline: runtime probing → necessity-gated scans → four-signal measurements → capability verification, and delivers a reproducible set of optimal launch parameters (MoE + dense both supported).
 
 ***
 
