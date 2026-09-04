@@ -1,7 +1,7 @@
 {
   "name": "dsh-local-llm-controller",
-  "version": "2.0.1",
-  "description": "DSH plugin: start/stop a local llama.cpp llama-server from the settings → plugins page — two model slots (A/B) with per-slot model-file selection, eight editable launch-parameter groups (text/vision × fast/long × 2 slots), and DSH provider registration with names derived from the chosen model file.",
+  "version": "2.0.2",
+  "description": "DSH plugin: start/stop a local llama.cpp llama-server from the settings → plugins page — two model slots (A/B) with per-slot model-file selection, eight editable launch-parameter groups (text/vision × fast/long × 2 slots), and one shared DSH provider carrying both slots' models with four thinking-effort levels.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
