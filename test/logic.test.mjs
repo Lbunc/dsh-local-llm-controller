@@ -27,6 +27,11 @@ test('defaultPresetArgs: covers the base set and carries -c per group', () => {
   assert.equal(argValue(fast, '-c'), '32768')
   assert.equal(argValue(long, '-c'), '131072')
   assert.equal(argValue(fast, '--metrics'), null) // pure flag: no value
+  // neutralized penalties are part of the required sampling set
+  assert.equal(argValue(fast, '--repeat-penalty'), '1')
+  assert.equal(argValue(fast, '--presence-penalty'), '0')
+  assert.equal(argValue(long, '--repeat-penalty'), '1')
+  assert.equal(argValue(long, '--presence-penalty'), '0')
 })
 
 test('normalizeArgRow: drops invalid rows, coerces values', () => {
@@ -43,11 +48,32 @@ test('normalizePresets: fills all eight groups', () => {
   for (const g of PRESET_GROUPS) assert.ok(Array.isArray(p[g]) && p[g].length > 0)
 })
 
-test('normalizePresets: keeps provided rows, prefills the missing groups', () => {
+test('normalizePresets: keeps provided rows verbatim, prefills the missing groups', () => {
+  // a stored group is user state: rows are kept EXACTLY as saved — deletions
+  // and value edits persist across reloads, restarts, and plugin upgrades
   const p = normalizePresets({ 'text:fast': [{ flag: '-ncmoe', value: '20' }] })
   assert.deepEqual(p['text:fast'], [{ flag: '-ncmoe', value: '20' }])
   assert.notEqual(p['text:long'], undefined)
   assert.equal(argValue(p['text:fast'], '-ncmoe'), '20')
+  assert.equal(argValue(p['text:fast'], '--repeat-penalty'), null)
+})
+
+test('normalizePresets: a group the user emptied stays empty', () => {
+  const p = normalizePresets({ 'text:fast': [], 'text:long': [{ flag: '-ngl', value: '99' }] })
+  assert.deepEqual(p['text:fast'], [])
+  assert.deepEqual(p['text:long'], [{ flag: '-ngl', value: '99' }])
+  // absent groups still get the template
+  assert.ok(p['vision:fast'].length > 0)
+  assert.ok(p['vision:long'].length > 0)
+})
+
+test('normalizePresets: template updates never backfill stored groups', () => {
+  // a stored group that lacks template rows keeps lacking them after an
+  // upgrade — new defaults reach NEW groups only, never tuned ones
+  const p = normalizePresets({ 'text:fast': [{ flag: '-ngl', value: '99' }] })
+  assert.equal(argValue(p['text:fast'], '--repeat-penalty'), null)
+  assert.equal(argValue(p['text:fast'], '--presence-penalty'), null)
+  assert.equal(argValue(p['text:fast'], '-ngl'), '99')
 })
 
 test('argValue: returns null when the flag is absent', () => {
