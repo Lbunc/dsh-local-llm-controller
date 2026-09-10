@@ -52,6 +52,7 @@
 
 ### ⚠️ 注意事项
 
+- **本插件只适配 DSH 的 RC 正式分支**（当前验证版本 `0.1.5-rc.1`；其他分支不保证兼容）。
 - **同一插槽换模型文件后**：Provider Key 随文件名变化——旧键在「设置 → 模型」里**不会自动覆写/删除**，需要**手动删除旧条目**后，再点「添加到模型列表」写入新条目。
 - **视觉图片**：llama-server（旧构建）的图片解码器**不支持 WebP**。本插件已把 DSH 的图片请求预算提高到 16MiB / 4096²，常规 **PNG/JPEG 截图/大图会原样直达**；**WebP 源文件**请先转成 PNG/JPEG 再发。
 - 模型文件夹里的 **mmproj**（视觉投影器）自动识别、视觉模式自动挂载，且必须在文件名中包含 `mmproj`。
@@ -63,7 +64,7 @@
 
 ## 📦 安装
 
-### 方式一：一条命令（推荐）
+### 一条命令（推荐）
 
 ```bash
 # dsh 已在环境变量（全局安装过 @deepseek-ai/dsh）
@@ -74,6 +75,24 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 ```
 
 装完**重启 DSH Web**（本包声明了 `dsh.bundle`，注册自动完成，无需手动配置）。卡片出现在 **设置 → 插件 → Local LLM Controller**。
+
+### ⬆️ 升级
+
+一条命令升到最新版（`add` 会重新解析版本并更新依赖，已是最新时提示 `Already up to date`）：
+
+```bash
+dsh plugin --profile web add dsh-local-llm-controller
+```
+
+装完**重启 DSH Web**（宿主侧代码在启动时加载）。其他常用形式：
+
+| 目的 | 命令 |
+| --- | --- |
+| 先看有没有新版（无输出 = 已是最新） | `dsh plugin --profile web outdated` |
+| 装指定版本 | `dsh plugin --profile web add dsh-local-llm-controller@2.1.0` |
+| 用 `link:` 开发方式安装的（非 npm 安装） | 无需升级命令，`git pull` 后重启 DSH 即可 |
+
+> 安装/升级时若出现 `Issues with peer dependencies found` 警告属正常现象（本插件的 peer 由 DSH 宿主提供，不随包安装），不影响使用。
 
 ### 🗑️ 卸载
 

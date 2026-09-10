@@ -55,6 +55,7 @@ Start/stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-ser
 
 ### ⚠️ Notes
 
+- **This plugin targets the DSH RC release branch only** (currently verified on `0.1.5-rc.1`; other branches are not guaranteed to work).
 - **After switching the model file in the same slot**: the Provider Key changes with the file name — the old key in **Settings → Models** is **never overwritten/removed automatically**; delete the old entry manually, then click「Add to model list」to write the new one.
 - **Vision images**: the image decoder of old llama-server builds **does not support WebP**. This plugin raises DSH's image-request budget to 16MiB / 4096², so regular **PNG/JPEG screenshots and large images pass through untouched**; **WebP source files** must be converted to PNG/JPEG first.
 - The **mmproj** (vision projector) in the model folder is auto-detected and auto-attached in vision mode; its file name must contain `mmproj`.
@@ -77,6 +78,24 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 ```
 
 Then **restart DSH Web** — the package declares `dsh.bundle`, registration is automatic, no manual config rows. The card appears at **Settings → Plugins → Local LLM Controller**.
+
+### ⬆️ Upgrade
+
+One command upgrades to the latest version (`add` re-resolves the version and updates the dependency; it prints `Already up to date` when nothing changed):
+
+```bash
+dsh plugin --profile web add dsh-local-llm-controller
+```
+
+Then **restart DSH Web** (host-side code loads at startup). Other common forms:
+
+| Goal | Command |
+| --- | --- |
+| Check for a newer version first (no output = up to date) | `dsh plugin --profile web outdated` |
+| Install a specific version | `dsh plugin --profile web add dsh-local-llm-controller@2.1.0` |
+| Installed via `link:` for development (not from npm) | No upgrade command — `git pull` and restart DSH |
+
+> Seeing `Issues with peer dependencies found` during install/upgrade is expected (this plugin's peers are provided by the DSH host and are not installed with the package) and does not affect usage.
 
 ### 🗑️ Uninstall
 

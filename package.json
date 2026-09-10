@@ -1,6 +1,6 @@
 {
   "name": "dsh-local-llm-controller",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "DSH plugin: start/stop a local llama.cpp llama-server from the settings → plugins page — two model slots (A/B) with per-slot model-file selection, eight editable launch-parameter groups (text/vision × fast/long × 2 slots), and one shared DSH provider carrying both slots' models with four thinking-effort levels.",
   "type": "module",
   "main": "lib/index.js",
@@ -49,8 +49,8 @@
   },
   "peerDependencies": {
     "react": "^18.2.0",
-    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.7"
+    "@deepseek-ai/dsh-client-ui-settings": "^0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-locale": "^0.1.5-rc.1"
   },
   "license": "MIT"
 }
