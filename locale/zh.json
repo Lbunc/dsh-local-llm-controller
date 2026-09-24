@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "本地大模型控制器",
+    "description": "启动/停止本地 llama.cpp llama-server：双模型槽位（A/B）、按槽位的启动参数组，以及一个共享的 DSH 模型提供者。"
+  }
+}

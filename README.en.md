@@ -22,42 +22,20 @@
 
 Start/stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-server` right from the DSH (DeepSeek Harness) **Settings → Plugins** page, hooking your local model into DSH as a session model.
 
-**Since v2.0**: no longer tied to specific models — two **model slots A/B** (each with its own folder and model file) and **8 editable launch-parameter groups** per slot (text/vision × fast/long-context). The model name and Provider key are derived from the chosen GGUF automatically; rename on the models page if you like.
-
-> 🌐 Card copy follows the DSH Web language setting (简体中文 / English) — no extra configuration.
+> ⚠️⚠️⚠️ DSH changed a lot under the hood in `0.1.7-rc.1` — upgrade the plugin to `v2.1.0` or later to ensure compatibility.
 
 ***
 
-## 🆕 v2.0: usage after install
-
-> Differences from v1.x: two fixed models (35B/9B) → **two slots A/B**; built-in presets → **8 editable launch-parameter rows**; model name/Provider key → derived from the file, renameable on the models page.
+## 🥳 usage after install
 
 ### Usage flow
 
-1. **Open the card** and fill in the config area:
-   - `llama.cpp directory`: where `llama-server.exe` lives (required)
-   - `Port`: default 55555 (「Add to model list」writes the current value into the provider baseURL)
-   - `API key`: blank = no auth (loopback only); a placeholder auth header is still written (pi-ai client requires one), and a set value is used on both sides
-
-   <p align="center"><img src="images/setting-plug.png" width="420" alt="Settings → Plugins (config card)"></p>
-
-2. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
-3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**.
-
-   <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
-
-4. **Launch parameters** (8 groups = slot × text/vision × fast/long): the group being edited is shown as「Launch args (current combo)」; each row is a `flag` + `value` pair of inputs, with **+ add row** and **× delete row**. Basics are prefilled (`-ngl`/`-t`/`-c`/sampling…); see the [llama.cpp docs](https://github.com/ggml-org/llama.cpp) and the recommended sets below. `-m`/`-a`/`--port`/`--host`/`--api-key` and vision-mode `--mmproj` are managed automatically — never add them manually.
-
-   <p align="center"><img src="images/params.png" width="420" alt="Launch parameter rows (one of 8 groups)"></p>
-
-5. **Launch zone**: choose slot A/B → mode (text/vision) → preset (fast/long) → click **「Start」**.
-6. **Chat**: once the status turns Running, pick the local model at the bottom of a session; **「Stop」** releases the port; errors show the reason and recent logs on the card.
-
-   <p align="center"><img src="images/useing.png" width="420" alt="Pick the local model in a session to chat"></p>
+1. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
+2. **Launch zone**: choose slot A/B → mode (text/vision) → preset (fast/long) → click **「Start」**.
 
 ### ⚠️ Notes
 
-- **This plugin targets the DSH RC release branch only** (currently verified on `0.1.5-rc.2`; other branches are not guaranteed to work).
+- **This plugin targets the DSH RC release branch only** (currently verified on `0.1.7-rc.1`; other branches are not guaranteed to work).
 - **After switching the model file in the same slot**: the Provider Key changes with the file name — the old key in **Settings → Models** is **never overwritten/removed automatically**; delete the old entry manually, then click「Add to model list」to write the new one.
 - **Vision images**: the image decoder of old llama-server builds **does not support WebP**. This plugin raises DSH's image-request budget to 16MiB / 4096², so regular **PNG/JPEG screenshots and large images pass through untouched**; **WebP source files** must be converted to PNG/JPEG first.
 - The **mmproj** (vision projector) in the model folder is auto-detected and auto-attached in vision mode; its file name must contain `mmproj`.
@@ -81,6 +59,12 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 
 Then **restart DSH Web** — the package declares `dsh.bundle`, registration is automatic, no manual config rows. The card appears at **Settings → Plugins → Local LLM Controller**.
 
+### 🧩 Plugin manager (GUI)
+
+Open the **Plugins** page in the DSH Web sidebar → click **「Add plugin」** → enter the package name `dsh-local-llm-controller` → pick an install source → click **「Install」**, then **restart DSH Web** the same way.
+
+<p align="center"><img src="images/plugin-manager-add.png" width="420" alt="DSH plugin manager: Add plugin dialog with dsh-local-llm-controller entered"></p>
+
 ### ⬆️ Upgrade
 
 One command upgrades to the latest version (`add` re-resolves the version and updates the dependency; it prints `Already up to date` when nothing changed):
@@ -91,31 +75,33 @@ dsh plugin --profile web add dsh-local-llm-controller
 
 Then **restart DSH Web** (host-side code loads at startup). Other common forms:
 
-| Goal | Command |
-| --- | --- |
-| Check for a newer version first (no output = up to date) | `dsh plugin --profile web outdated` |
-| Install a specific version | `dsh plugin --profile web add dsh-local-llm-controller@2.1.0` |
-| Installed via `link:` for development (not from npm) | No upgrade command — `git pull` and restart DSH |
+| Goal                                                     | Command                                                       |
+| -------------------------------------------------------- | ------------------------------------------------------------- |
+| Check for a newer version first (no output = up to date) | `dsh plugin --profile web outdated`                           |
+| Install a specific version                               | `dsh plugin --profile web add dsh-local-llm-controller@2.1.0` |
+| Installed via `link:` for development (not from npm)     | No upgrade command — `git pull` and restart DSH               |
 
 > Seeing `Issues with peer dependencies found` during install/upgrade is expected (this plugin's peers are provided by the DSH host and are not installed with the package) and does not affect usage.
 
 ### 🗑️ Uninstall
 
 1. If a model is running, click **「Stop」** on the card first (optional — DSH reaps plugin children on restart).
-2. One command removes it (registration auto-purged, no file edits):
-
+2. If the **default model** or a preset is set to a local model (provider `dsh-local`), switch it back to a cloud model before uninstalling, or the default model dangles.
+3. One command removes it (bundle registration and the `link:` dependency are purged automatically):
    ```bash
    dsh plugin --profile web remove dsh-local-llm-controller
    ```
+4. Restart DSH Web — the card disappears.
 
-3. Restart DSH Web — the card disappears.
+The command automatically cleans the profile's bundle registration and dependency (`profiles/web/package.json`, `pnpm-lock.yaml`). The following are **not** auto-removed (verified on v2.1.0 / DSH 0.1.7-rc.1):
 
-| Leftovers (optional cleanup) | Notes |
-| --- | --- |
-| `settings.yaml` `local-llm` section | Plugin state/config; harmless to keep, delete for a clean state |
-| `llm-pi-ai.providers.*` (derived-key local entries) | **Keep recommended**: still usable when running the same port manually; delete if truly unused |
-| `~/.dsh/local-llm.config.json` | Leftover from the old installer era, safe to delete |
-| Model files / llama.cpp itself | Not the plugin's concern, keep |
+| Leftovers (optional cleanup)                                   | Notes                                                                                                      |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `~/.dsh/local-llm.config.json`                                 | **The card config** (llama.cpp dir, port and all 8 launch-parameter groups). Keep it if you plan to reinstall; delete only when fully abandoning the plugin |
+| `llm-pi-ai.providers.dsh-local` (in `profiles/web/cordis.patch.yml`) | The model-page entry written by 「Add to Model List」; still usable when running the same port manually, delete if truly unused |
+| The version-exempt line in `pnpm-workspace.yaml`               | One line of install metadata (`dsh-local-llm-controller@…`) that remove does not recycle; harmless, ignore it |
+
+> Upgrading from v2.0.x: the old `local-llm` section in `settings.yaml` was renamed into `settings.yaml.imported` during the one-time DSH 0.1.7 import; nothing reads it anymore, no action needed.
 
 ***
 
@@ -148,7 +134,7 @@ Then **restart DSH Web** (host-side code loads at startup). Other common forms:
 ## 📖 Further reading
 
 - [Tuning Report Archive (35B / 9B / 27B)](docs/measurements/ctx_scan_report.md): Multi-model real-world measurements, tuning conclusions, hardware selection advice, and the long-context safe-ceiling summary.
-- [**llm-experiment-design · DSH Tuning Skill**](docs/llm-experiment-design/SKILL.md): The Skill for deep-tuning a new GGUF — it schedules scripts and interprets results via the standard pipeline: runtime probing → necessity-gated scans → four-signal measurements → capability verification, and delivers a reproducible set of optimal launch parameters (MoE + dense both supported).
+- **[llm-experiment-design · DSH Tuning Skill](docs/llm-experiment-design/SKILL.md)**: The Skill for deep-tuning a new GGUF — it schedules scripts and interprets results via the standard pipeline: runtime probing → necessity-gated scans → four-signal measurements → capability verification, and delivers a reproducible set of optimal launch parameters (MoE + dense both supported).
 
 ***
 

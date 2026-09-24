@@ -22,39 +22,20 @@
 
 在 DSH（DeepSeek Harness）的「设置 → 插件」页面一键启停本地 [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-server`，把本地大模型直接接入 DSH 作为会话模型。
 
-
-> 🌐 卡片界面文案跟随 DSH Web 的语言设置（简体中文 / English），无需额外配置。
+> ⚠️⚠️⚠️ DSH在`0.1.7-rc.1` 版本进行了大量底层改动，请把插件升级到`v2.1.0`及之后的版本，以确保兼容性。
 
 ***
 
-## 🆕 v2.0：安装后的使用流程
+##  🥳 安装后的使用流程
 
 ### 使用流程
 
-1. **展开卡片**，在配置区填：
-   - `llama.cpp 目录`：`llama-server.exe` 所在文件夹（必填）
-   - `端口`：默认 55555（「添加到模型列表」按当前值写入 provider 的 baseURL）
-   - `密钥`：留空 = 无鉴权（仅回环）；留空也会写入占位鉴权头（pi-ai 客户端要求）
-
-   <p align="center"><img src="images/setting-plug.png" width="420" alt="设置 → 插件（配置卡片）"></p>
-
-2. **槽位 A / B 配置**：各填一个**模型文件夹路径**（内含模型 GGUF，含视觉的还要有 mmproj）→ 点「**保存配置**」。
-3. **添加模型到模型列表**：保存后文件夹内所有模型 GGUF 变成气泡（mmproj 不会出现在列表，视觉时自动挂载）→ 点选一个→ 点「**保存配置**」→ 点「**添加到模型列表**」。模型名由文件名**自动派生**；要改名/改显示名去 **设置 → 模型** 页改。
-
-   <p align="center"><img src="images/params.png" width="420" alt="启动参数行（8 组之一）"></p>
-   
-4. **启动参数**（8 组 = 槽位 × 文本/视觉 × 快速/长上下文）：「启动参数（当前组合）」显示正在编辑哪一组，每行 = `参数` + `值` 两个输入框，支持 **+ 添加参数行** 与 × **删除行**。基础参数已预填（`-ngl`/`-t`/`-c`/采样…），推荐的高级参数组合见项目文档与 [llama.cpp 参数](https://github.com/ggml-org/llama.cpp)；`-m`/`-a`/`--port`/`--host`/`--api-key` 及视觉时的 `--mmproj` 由插件自动管理，无需在参数行里添加。
-
-   <p align="center"><img src="images/setting-model.png" width="420" alt="设置 → 模型（添加到模型列表后出现）"></p>
-
-5. **启动区**：选槽位 A/B → 选模式（文本/视觉）→ 选预设（快速/长上下文）→ 点「**启动**」
-6. **对话**：状态变「运行中」后，会话底部选择对应的本地模型即可；「停止」释放端口；出错时卡片显示原因与最近日志。
-
-   <p align="center"><img src="images/useing.png" width="420" alt="会话中选择本地模型对话"></p>
+1. **槽位 A / B 配置**：各填一个**模型文件夹路径**（内含模型 GGUF，含视觉的还要有 mmproj）→ 点「**保存配置**」。
+2. **启动区**：选槽位 A/B → 选模式（文本/视觉）→ 选预设（快速/长上下文）→ 点「**启动**」
 
 ### ⚠️ 注意事项
 
-- **本插件只适配 DSH 的 RC 正式分支**（当前验证版本 `0.1.5-rc.2`；其他分支不保证兼容）。
+- **本插件只适配 DSH 的 RC 正式分支**（当前验证版本 `0.1.7-rc.1`；其他分支不保证兼容）。
 - **同一插槽换模型文件后**：Provider Key 随文件名变化——旧键在「设置 → 模型」里**不会自动覆写/删除**，需要**手动删除旧条目**后，再点「添加到模型列表」写入新条目。
 - **视觉图片**：llama-server（旧构建）的图片解码器**不支持 WebP**。本插件已把 DSH 的图片请求预算提高到 16MiB / 4096²，常规 **PNG/JPEG 截图/大图会原样直达**；**WebP 源文件**请先转成 PNG/JPEG 再发。
 - 模型文件夹里的 **mmproj**（视觉投影器）自动识别、视觉模式自动挂载，且必须在文件名中包含 `mmproj`。
@@ -78,6 +59,12 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 
 装完**重启 DSH Web**（本包声明了 `dsh.bundle`，注册自动完成，无需手动配置）。卡片出现在 **设置 → 插件 → Local LLM Controller**。
 
+### 🧩 插件管理器（图形界面）
+
+DSH Web 侧边栏打开「**插件**」页 → 点「**添加插件**」→ 输入包名 `dsh-local-llm-controller` → 选择安装源 → 点「**安装**」，装完同样**重启 DSH Web**。
+
+<p align="center"><img src="images/plugin-manager-add.png" width="420" alt="DSH 插件管理器：添加插件对话框，输入 dsh-local-llm-controller"></p>
+
 ### ⬆️ 升级
 
 一条命令升到最新版（`add` 会重新解析版本并更新依赖，已是最新时提示 `Already up to date`）：
@@ -88,29 +75,33 @@ dsh plugin --profile web add dsh-local-llm-controller
 
 装完**重启 DSH Web**（宿主侧代码在启动时加载）。其他常用形式：
 
-| 目的 | 命令 |
-| --- | --- |
-| 先看有没有新版（无输出 = 已是最新） | `dsh plugin --profile web outdated` |
-| 装指定版本 | `dsh plugin --profile web add dsh-local-llm-controller@2.1.0` |
-| 用 `link:` 开发方式安装的（非 npm 安装） | 无需升级命令，`git pull` 后重启 DSH 即可 |
+| 目的                          | 命令                                                            |
+| --------------------------- | ------------------------------------------------------------- |
+| 先看有没有新版（无输出 = 已是最新）         | `dsh plugin --profile web outdated`                           |
+| 装指定版本                       | `dsh plugin --profile web add dsh-local-llm-controller@2.1.0` |
+| 用 `link:` 开发方式安装的（非 npm 安装） | 无需升级命令，`git pull` 后重启 DSH 即可                                  |
 
 > 安装/升级时若出现 `Issues with peer dependencies found` 警告属正常现象（本插件的 peer 由 DSH 宿主提供，不随包安装），不影响使用。
 
 ### 🗑️ 卸载
 
 1. 模型在运行就先在卡片点「停止」（不点也行——DSH 重启时插件自行清理子进程）。
-2. 一条命令卸载（注册自动移除，无需改文件）：
+2. 若已把「默认模型」或某个预设设成本地模型（provider `dsh-local`），先改回云端模型再卸载，否则默认模型悬空。
+3. 一条命令卸载（bundle 注册与 `link:` 依赖自动移除）：
    ```bash
    dsh plugin --profile web remove dsh-local-llm-controller
    ```
-3. 重启 DSH Web，卡片即消失。
+4. 重启 DSH Web，卡片即消失。
 
-| 卸载后的残留（可选清理）                      | 说明                               |
-| --------------------------------- | -------------------------------- |
-| `settings.yaml` 的 `local-llm` 段   | 插件写的状态/配置，留着无害，想干净就删             |
-| `llm-pi-ai.providers.*`（派生键的本地条目） | **建议保留**：改用手动方式跑同端口服务时仍可用；确实不用再删 |
-| `~/.dsh/local-llm.config.json`    | 旧安装脚本时代的遗留，可删                    |
-| 模型文件 / llama.cpp 本体               | 与插件无关，保留                         |
+卸载命令会自动清掉 profile 的 bundle 注册和依赖（`profiles/web/package.json`、`pnpm-lock.yaml`），以下内容**不会**被自动删除（v2.1.0 / DSH 0.1.7-rc.1 实测）：
+
+| 卸载后的残留（可选清理）                             | 说明                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `~/.dsh/local-llm.config.json`           | **卡片配置**（llama.cpp 目录、端口与 8 组启动参数）。打算重装就别删；彻底弃用再删                  |
+| `llm-pi-ai.providers.dsh-local`（`profiles/web/cordis.patch.yml`） | 「添加到模型列表」写入的模型页条目；改手动跑同端口服务时仍可用，不用就删                               |
+| `pnpm-workspace.yaml` 的版本豁免行             | remove 不回收的一行安装元数据（`dsh-local-llm-controller@…`），无害，可不管 |
+
+> 从 v2.0.x 升级的用户：旧版写在 `settings.yaml` 的 `local-llm` 段已随 DSH 0.1.7 的一次性导入改名进 `settings.yaml.imported`，无程序再读它，不用处理。
 
 ***
 
@@ -143,7 +134,7 @@ dsh plugin --profile web add dsh-local-llm-controller
 ## 📚 推荐阅读
 
 - [本地模型调优全历程终版存档](docs/measurements/ctx_scan_report.md)：35B / 9B / 27B 多模型实测对比、调优结论、选型建议与长上下文安全上限汇总。
-- [**llm-experiment-design · DSH 调优 Skill**](docs/llm-experiment-design/SKILL.md)：给新 GGUF 做深度调优用的 Skill——按「运行时探查 → 必要性驱动扫描 → 四件套测量 → 能力验证」流程安排脚本与判读，最终输出一套可复现的最优启动参数（MoE/dense 通用）。
+- **[llm-experiment-design · DSH 调优 Skill](docs/llm-experiment-design/SKILL.md)**：给新 GGUF 做深度调优用的 Skill——按「运行时探查 → 必要性驱动扫描 → 四件套测量 → 能力验证」流程安排脚本与判读，最终输出一套可复现的最优启动参数（MoE/dense 通用）。
 
 ***
 

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Local LLM Controller",
+    "description": "Start/stop a local llama.cpp llama-server with two model slots (A/B), per-slot launch-parameter groups, and one shared DSH provider for the model picker."
+  }
+}
