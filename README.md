@@ -30,8 +30,26 @@
 
 ### 使用流程
 
-1. **槽位 A / B 配置**：各填一个**模型文件夹路径**（内含模型 GGUF，含视觉的还要有 mmproj）→ 点「**保存配置**」。
-2. **启动区**：选槽位 A/B → 选模式（文本/视觉）→ 选预设（快速/长上下文）→ 点「**启动**」
+1. **展开卡片**，在配置区填：
+   - `llama.cpp 目录`：`llama-server.exe` 所在文件夹（必填）
+   - `端口`：默认 55555（「添加到模型列表」按当前值写入 provider 的 baseURL）
+   - `密钥`：留空 = 无鉴权（仅回环）；留空也会写入占位鉴权头（pi-ai 客户端要求）
+
+   <p align="center"><img src="images/setting-plug.png" width="420" alt="设置 → 插件（配置卡片）"></p>
+
+2. **槽位 A / B 配置**：各填一个**模型文件夹路径**（内含模型 GGUF，含视觉的还要有 mmproj）→ 点「**保存配置**」。
+3. **添加模型到模型列表**：保存后文件夹内所有模型 GGUF 变成气泡（mmproj 不会出现在列表，视觉时自动挂载）→ 点选一个→ 点「**保存配置**」→ 点「**添加到模型列表**」。模型名由文件名**自动派生**；要改名/改显示名去 **设置 → 模型** 页改。
+
+   <p align="center"><img src="images/params.png" width="420" alt="启动参数行（8 组之一）"></p>
+
+4. **启动参数**（8 组 = 槽位 × 文本/视觉 × 快速/长上下文）：「启动参数（当前组合）」显示正在编辑哪一组，每行 = `参数` + `值` 两个输入框，支持 **+ 添加参数行** 与 × **删除行**。基础参数已预填（`-ngl`/`-t`/`-c`/采样…），推荐的高级参数组合见项目文档与 [llama.cpp 参数](https://github.com/ggml-org/llama.cpp)；`-m`/`-a`/`--port`/`--host`/`--api-key` 及视觉时的 `--mmproj` 由插件自动管理，无需在参数行里添加。
+
+   <p align="center"><img src="images/setting-model.png" width="420" alt="设置 → 模型（添加到模型列表后出现）"></p>
+
+5. **启动区**：选槽位 A/B → 选模式（文本/视觉）→ 选预设（快速/长上下文）→ 点「**启动**」
+6. **对话**：状态变「运行中」后，会话底部选择对应的本地模型即可；「停止」释放端口；出错时卡片显示原因与最近日志。
+
+   <p align="center"><img src="images/useing.png" width="420" alt="会话中选择本地模型对话"></p>
 
 ### ⚠️ 注意事项
 
@@ -57,11 +75,11 @@ dsh plugin --profile web add dsh-local-llm-controller
 npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 ```
 
-装完**重启 DSH Web**（本包声明了 `dsh.bundle`，注册自动完成，无需手动配置）。卡片出现在 **设置 → 插件 → Local LLM Controller**。
+<br />
 
 ### 🧩 插件管理器（图形界面）
 
-DSH Web 侧边栏打开「**插件**」页 → 点「**添加插件**」→ 输入包名 `dsh-local-llm-controller` → 选择安装源 → 点「**安装**」，装完同样**重启 DSH Web**。
+DSH Web 侧边栏打开「**插件**」页 → 点「**添加插件**」→ 输入包名 `dsh-local-llm-controller` → 选择安装源 → 点「**安装**」，装完**无需重启 DSH Web**。
 
 <p align="center"><img src="images/plugin-manager-add.png" width="420" alt="DSH 插件管理器：添加插件对话框，输入 dsh-local-llm-controller"></p>
 
@@ -73,7 +91,7 @@ DSH Web 侧边栏打开「**插件**」页 → 点「**添加插件**」→ 输�
 dsh plugin --profile web add dsh-local-llm-controller
 ```
 
-装完**重启 DSH Web**（宿主侧代码在启动时加载）。其他常用形式：
+其他常用形式：
 
 | 目的                          | 命令                                                            |
 | --------------------------- | ------------------------------------------------------------- |
@@ -91,15 +109,15 @@ dsh plugin --profile web add dsh-local-llm-controller
    ```bash
    dsh plugin --profile web remove dsh-local-llm-controller
    ```
-4. 重启 DSH Web，卡片即消失。
+4. 刷新页面，卡片即消失（无需重启 DSH）。
 
 卸载命令会自动清掉 profile 的 bundle 注册和依赖（`profiles/web/package.json`、`pnpm-lock.yaml`），以下内容**不会**被自动删除（v2.1.0 / DSH 0.1.7-rc.1 实测）：
 
-| 卸载后的残留（可选清理）                             | 说明                                                                 |
-| ---------------------------------------- | ------------------------------------------------------------------ |
-| `~/.dsh/local-llm.config.json`           | **卡片配置**（llama.cpp 目录、端口与 8 组启动参数）。打算重装就别删；彻底弃用再删                  |
-| `llm-pi-ai.providers.dsh-local`（`profiles/web/cordis.patch.yml`） | 「添加到模型列表」写入的模型页条目；改手动跑同端口服务时仍可用，不用就删                               |
-| `pnpm-workspace.yaml` 的版本豁免行             | remove 不回收的一行安装元数据（`dsh-local-llm-controller@…`），无害，可不管 |
+| 卸载后的残留（可选清理）                                                     | 说明                                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------- |
+| `~/.dsh/local-llm.config.json`                                   | **卡片配置**（llama.cpp 目录、端口与 8 组启动参数）。打算重装就别删；彻底弃用再删       |
+| `llm-pi-ai.providers.dsh-local`（`profiles/web/cordis.patch.yml`） | 「添加到模型列表」写入的模型页条目；改手动跑同端口服务时仍可用，不用就删                    |
+| `pnpm-workspace.yaml` 的版本豁免行                                     | remove 不回收的一行安装元数据（`dsh-local-llm-controller@…`），无害，可不管 |
 
 > 从 v2.0.x 升级的用户：旧版写在 `settings.yaml` 的 `local-llm` 段已随 DSH 0.1.7 的一次性导入改名进 `settings.yaml.imported`，无程序再读它，不用处理。
 

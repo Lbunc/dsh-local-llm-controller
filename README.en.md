@@ -30,8 +30,26 @@ Start/stop a local [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-ser
 
 ### Usage flow
 
-1. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
-2. **Launch zone**: choose slot A/B → mode (text/vision) → preset (fast/long) → click **「Start」**.
+1. **Open the card** and fill in the config area:
+   - `llama.cpp directory`: where `llama-server.exe` lives (required)
+   - `Port`: default 55555 (「Add to model list」writes the current value into the provider baseURL)
+   - `API key`: blank = no auth (loopback only); a placeholder auth header is still written (pi-ai client requires one), and a set value is used on both sides
+
+   <p align="center"><img src="images/setting-plug.png" width="420" alt="Settings → Plugins (config card)"></p>
+
+2. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
+3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**.
+
+   <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
+
+4. **Launch parameters** (8 groups = slot × text/vision × fast/long): the group being edited is shown as「Launch args (current combo)」; each row is a `flag` + `value` pair of inputs, with **+ add row** and **× delete row**. Basics are prefilled (`-ngl`/`-t`/`-c`/sampling…); see the [llama.cpp docs](https://github.com/ggml-org/llama.cpp) and the recommended sets below. `-m`/`-a`/`--port`/`--host`/`--api-key` and vision-mode `--mmproj` are managed automatically — never add them manually.
+
+   <p align="center"><img src="images/params.png" width="420" alt="Launch parameter rows (one of 8 groups)"></p>
+
+5. **Launch zone**: choose slot A/B → mode (text/vision) → preset (fast/long) → click **「Start」**.
+6. **Chat**: once the status turns Running, pick the local model at the bottom of a session; **「Stop」** releases the port; errors show the reason and recent logs on the card.
+
+   <p align="center"><img src="images/useing.png" width="420" alt="Pick the local model in a session to chat"></p>
 
 ### ⚠️ Notes
 
@@ -57,11 +75,11 @@ dsh plugin --profile web add dsh-local-llm-controller
 npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller
 ```
 
-Then **restart DSH Web** — the package declares `dsh.bundle`, registration is automatic, no manual config rows. The card appears at **Settings → Plugins → Local LLM Controller**.
+<br />
 
 ### 🧩 Plugin manager (GUI)
 
-Open the **Plugins** page in the DSH Web sidebar → click **「Add plugin」** → enter the package name `dsh-local-llm-controller` → pick an install source → click **「Install」**, then **restart DSH Web** the same way.
+Open the **Plugins** page in the DSH Web sidebar → click **「Add plugin」** → enter the package name `dsh-local-llm-controller` → pick an install source → click **「Install」**
 
 <p align="center"><img src="images/plugin-manager-add.png" width="420" alt="DSH plugin manager: Add plugin dialog with dsh-local-llm-controller entered"></p>
 
@@ -73,7 +91,7 @@ One command upgrades to the latest version (`add` re-resolves the version and up
 dsh plugin --profile web add dsh-local-llm-controller
 ```
 
-Then **restart DSH Web** (host-side code loads at startup). Other common forms:
+&#x20;Other common forms:
 
 | Goal                                                     | Command                                                       |
 | -------------------------------------------------------- | ------------------------------------------------------------- |
@@ -91,15 +109,15 @@ Then **restart DSH Web** (host-side code loads at startup). Other common forms:
    ```bash
    dsh plugin --profile web remove dsh-local-llm-controller
    ```
-4. Restart DSH Web — the card disappears.
+4. Refresh the page — the card disappears (no DSH restart needed).
 
 The command automatically cleans the profile's bundle registration and dependency (`profiles/web/package.json`, `pnpm-lock.yaml`). The following are **not** auto-removed (verified on v2.1.0 / DSH 0.1.7-rc.1):
 
-| Leftovers (optional cleanup)                                   | Notes                                                                                                      |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `~/.dsh/local-llm.config.json`                                 | **The card config** (llama.cpp dir, port and all 8 launch-parameter groups). Keep it if you plan to reinstall; delete only when fully abandoning the plugin |
-| `llm-pi-ai.providers.dsh-local` (in `profiles/web/cordis.patch.yml`) | The model-page entry written by 「Add to Model List」; still usable when running the same port manually, delete if truly unused |
-| The version-exempt line in `pnpm-workspace.yaml`               | One line of install metadata (`dsh-local-llm-controller@…`) that remove does not recycle; harmless, ignore it |
+| Leftovers (optional cleanup)                                         | Notes                                                                                                                                                       |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `~/.dsh/local-llm.config.json`                                       | **The card config** (llama.cpp dir, port and all 8 launch-parameter groups). Keep it if you plan to reinstall; delete only when fully abandoning the plugin |
+| `llm-pi-ai.providers.dsh-local` (in `profiles/web/cordis.patch.yml`) | The model-page entry written by 「Add to Model List」; still usable when running the same port manually, delete if truly unused                               |
+| The version-exempt line in `pnpm-workspace.yaml`                     | One line of install metadata (`dsh-local-llm-controller@…`) that remove does not recycle; harmless, ignore it                                               |
 
 > Upgrading from v2.0.x: the old `local-llm` section in `settings.yaml` was renamed into `settings.yaml.imported` during the one-time DSH 0.1.7 import; nothing reads it anymore, no action needed.
 
