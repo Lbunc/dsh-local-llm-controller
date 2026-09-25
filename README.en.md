@@ -13,8 +13,7 @@ The control card lives in Settings → Plugins → Local LLM Controller
 [![npm version](https://img.shields.io/npm/v/dsh-local-llm-controller?color=blue)](https://www.npmjs.com/package/dsh-local-llm-controller)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Lbunc/dsh-local-llm-controller/blob/main/LICENSE)
 [![llama.cpp](https://img.shields.io/badge/llama.cpp-upstream-8B5CF6)](https://github.com/ggml-org/llama.cpp)
-[![DSH Artifact](https://www.dsh.so/badge/dsh-local-llm-controller.svg)](https://www.dsh.so/artifact/dsh-local-llm-controller/)
-[![Install on DSH](https://www.dsh.so/badge/install/dsh-local-llm-controller.svg)](https://www.dsh.so/artifact/dsh-local-llm-controller/)
+[![DSH 0.1.7-rc.2](images/badge-dsh.svg)](https://www.npmjs.com/package/@deepseek-ai/dsh)
 
 </div>
 
