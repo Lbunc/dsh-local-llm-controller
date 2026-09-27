@@ -126,8 +126,13 @@ The command automatically cleans the profile's bundle registration and dependenc
 
 ## 📖 Further reading
 
-- [Tuning Report Archive (35B / 9B / 27B)](docs/measurements/ctx_scan_report.md): Multi-model real-world measurements, tuning conclusions, hardware selection advice, and the long-context safe-ceiling summary.
+- [Tuning Report Archive (per-model reports)](docs/measurements/README.md): One report per model — 35B / 9B / 27B / Occamy — with a conclusions digest, cross-model capability comparison, and reproduction scripts & raw-log notes.
+- [Occamy-1.0 vs Qwen3.6-35B-A3B Comparison](docs/measurements/occamy_vs_ud_report.md): Same-session A/B of two same-base 35B MoEs across capability/speed/context — occamy +17% decode vs UD +32% prefill, plus two directly actionable findings (`-t 14`, `-ncmoe 22 → 128K`).
 - **[llm-experiment-design · DSH Tuning Skill](docs/llm-experiment-design/SKILL.md)**: The Skill for deep-tuning a new GGUF — it schedules scripts and interprets results via the standard pipeline: runtime probing → necessity-gated scans → four-signal measurements → capability verification, and delivers a reproducible set of optimal launch parameters (MoE + dense both supported).
+
+## ⚠️ Known issues
+
+- **DSH context auto-compaction breaks down with small windows**: DSH's compaction pipeline (`dsh-compaction-basic`) reserves a fixed 65,536-token budget for the summarization call (`headroomTokens`, a constant calibrated for million-token cloud models); the auto-compaction threshold is `min(0.8 × contextWindow, contextWindow − maxTokens − 65536)`. With small local-model windows this constant dominates: at 131072 the threshold drops to **37.5%** (compaction fires far too early, each trigger costing a full re-prefill), and at 32768 the formula goes negative — **auto-compaction silently disables**. Workaround: explicitly set smaller `headroomTokens` / `maxTokens` (per model via `modelPolicies`) in the `compaction-basic` config of your user agent preset. Root-cause chain, step-by-step evidence, and the full mitigation: [dsh-local-compaction-report.md](dsh-local-compaction-report.md).
 
 ## 📄 License
 

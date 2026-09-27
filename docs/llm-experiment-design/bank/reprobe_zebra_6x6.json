@@ -1,0 +1,61 @@
+{
+ "name": "zebra_reprobe",
+ "version": 1,
+ "seed": 20260214,
+ "ctx": 65536,
+ "reasoning_budget": 32768,
+ "notes": "区分度轴复现检验用题库：当主库只在某一个能力轴上出现差异时，在该轴上追加**同难度、互不共享解**的实例，用于检验该差异是否可复现（n=1 不足以排名次，见 reference/09-capability-bank.md）。主库保持冻结不动，复现库独立记分。",
+ "items": [
+  {
+   "qid": "Z1",
+   "axis": "约束逻辑（复现检验）",
+   "source": "ZebraLogic",
+   "kind": "mc",
+   "gtype": "mc",
+   "label": "ZebraLogic 6x6 mc (lgp-test-6x6-1#mc-2, 27 clues)",
+   "date": "2024-06",
+   "prompt": "There are 6 houses, numbered 1 to 6 from left to right, as seen from across the street. Each house is occupied by a different person. Each house has a unique attribute for each of the following characteristics:\n - Each person has a unique name: `Bob`, `Peter`, `Arnold`, `Eric`, `Alice`, `Carol`\n - People have unique hair colors: `red`, `gray`, `auburn`, `blonde`, `brown`, `black`\n - People have unique favorite book genres: `historical fiction`, `biography`, `romance`, `fantasy`, `mystery`, `science fiction`\n - People have unique heights: `very short`, `very tall`, `tall`, `short`, `super tall`, `average`\n - Each person has a unique level of education: `associate`, `doctorate`, `high school`, `trade school`, `bachelor`, `master`\n - Each person has a unique favorite drink: `boba tea`, `milk`, `water`, `root beer`, `coffee`, `tea`\n\n## Clues:\n1. The person with a doctorate and Bob are next to each other.\n2. There is one house between Carol and the person who has black hair.\n3. Peter is the person with a doctorate.\n4. The person who loves science fiction books is Eric.\n5. The one who only drinks water is the person who has an average height.\n6. Alice is the person who loves mystery books.\n7. The person who loves romance books is Bob.\n8. The person who has brown hair is in the second house.\n9. The person who has an average height is in the fourth house.\n10. The boba tea drinker is the person who is very tall.\n11. The person with a high school diploma is Bob.\n12. The person who is short is somewhere to the left of the person who is super tall.\n13. The person who loves historical fiction books and the person with a bachelor's degree are next to each other.\n14. The person who attended trade school is the person who has red hair.\n15. Carol is the person who has auburn hair.\n16. The person who is very short is somewhere to the right of the person who has gray hair.\n17. There are two houses between Eric and the person who loves fantasy books.\n18. There are two houses between the tea drinker and the person who is very short.\n19. Eric is somewhere to the left of the person with a bachelor's degree.\n20. The root beer lover is Alice.\n21. The person with an associate's degree is Arnold.\n22. The person who is tall is not in the second house.\n23. The person who loves science fiction books is the boba tea drinker.\n24. The person who has black hair is not in the fourth house.\n25. The person who is short is the coffee drinker.\n26. The coffee drinker and the person with a high school diploma are next to each other.\n27. The coffee drinker is not in the second house.\n\nWhat is BookGenre of the person who lives in House 1?\n\nA. biography\nB. mystery\nC. fantasy\nD. science fiction\nE. romance\nF. historical fiction\n\nAnswer with the letter of the correct option. Think it through, then end your reply with exactly: The answer is (X).",
+   "answer": "A",
+   "official_key": "biography",
+   "max_tokens": 36864,
+   "note": "官方答案：biography（选项固定种子重排）",
+   "base": "lgp-test-6x6-1",
+   "clue_count": 27,
+   "source_id": "lgp-test-6x6-1#mc-2"
+  },
+  {
+   "qid": "Z2",
+   "axis": "约束逻辑（复现检验）",
+   "source": "ZebraLogic",
+   "kind": "mc",
+   "gtype": "mc",
+   "label": "ZebraLogic 6x6 mc (lgp-test-6x6-3#mc-13, 24 clues)",
+   "date": "2024-06",
+   "prompt": "There are 6 houses, numbered 1 to 6 from left to right, as seen from across the street. Each house is occupied by a different person. Each house has a unique attribute for each of the following characteristics:\n - Each person has a unique name: `Peter`, `Alice`, `Bob`, `Carol`, `Arnold`, `Eric`\n - Each person has an occupation: `engineer`, `doctor`, `lawyer`, `artist`, `nurse`, `teacher`\n - Everyone has something unique for lunch: `soup`, `stew`, `grilled cheese`, `spaghetti`, `pizza`, `stir fry`\n - Everyone has a favorite smoothie: `cherry`, `dragonfruit`, `watermelon`, `lime`, `blueberry`, `desert`\n - Each person prefers a unique type of vacation: `camping`, `cultural`, `city`, `cruise`, `beach`, `mountain`\n - People use unique phone models: `iphone 13`, `google pixel 6`, `oneplus 9`, `samsung galaxy s21`, `xiaomi mi 11`, `huawei p50`\n\n## Clues:\n1. The person who likes Cherry smoothies is directly left of the person who enjoys camping trips.\n2. The person who is a lawyer is the person who uses a Xiaomi Mi 11.\n3. The person who is a doctor is Eric.\n4. The person who is a doctor and the Desert smoothie lover are next to each other.\n5. The person who is an artist is the person who prefers city breaks.\n6. The person who loves beach vacations is Alice.\n7. There are two houses between the person who is a pizza lover and the person who uses a Huawei P50.\n8. The person who uses a Xiaomi Mi 11 is the person who enjoys camping trips.\n9. The person who is an artist is directly left of the person who loves eating grilled cheese.\n10. The person who uses a Google Pixel 6 is in the first house.\n11. There is one house between the person who is a teacher and the person who loves stir fry.\n12. There are two houses between the person who is a pizza lover and the person who is an engineer.\n13. The person who is a pizza lover is somewhere to the left of the person who loves eating grilled cheese.\n14. The Watermelon smoothie lover is the person who uses a Xiaomi Mi 11.\n15. The person who loves eating grilled cheese is Carol.\n16. Alice is the person who drinks Blueberry smoothies.\n17. The person who likes Cherry smoothies is the person who loves the stew.\n18. The person who loves the soup is the person who uses a Samsung Galaxy S21.\n19. The person who uses an iPhone 13 is directly left of the Dragonfruit smoothie lover.\n20. The person who loves the stew is somewhere to the left of Peter.\n21. Arnold is somewhere to the right of the Desert smoothie lover.\n22. The person who likes going on cruises is the person who uses a Google Pixel 6.\n23. The person who goes on cultural tours is not in the fifth house.\n24. The person who is a teacher is Alice.\n\nWhat is Occupation of the person who lives in House 3?\n\nA. lawyer\nB. teacher\nC. engineer\nD. doctor\nE. nurse\nF. artist\n\nAnswer with the letter of the correct option. Think it through, then end your reply with exactly: The answer is (X).",
+   "answer": "E",
+   "official_key": "nurse",
+   "max_tokens": 36864,
+   "note": "官方答案：nurse（选项固定种子重排）",
+   "base": "lgp-test-6x6-3",
+   "clue_count": 24,
+   "source_id": "lgp-test-6x6-3#mc-13"
+  },
+  {
+   "qid": "Z3",
+   "axis": "约束逻辑（复现检验）",
+   "source": "ZebraLogic",
+   "kind": "mc",
+   "gtype": "mc",
+   "label": "ZebraLogic 6x6 mc (lgp-test-6x6-4#mc-1, 28 clues)",
+   "date": "2024-06",
+   "prompt": "There are 6 houses, numbered 1 to 6 from left to right, as seen from across the street. Each house is occupied by a different person. Each house has a unique attribute for each of the following characteristics:\n - Each person has a unique name: `Alice`, `Carol`, `Peter`, `Bob`, `Arnold`, `Eric`\n - They all have a unique favorite flower: `carnations`, `iris`, `tulips`, `daffodils`, `lilies`, `roses`\n - Each person prefers a unique type of vacation: `camping`, `mountain`, `city`, `beach`, `cultural`, `cruise`\n - Each person lives in a unique style of house: `colonial`, `modern`, `mediterranean`, `craftsman`, `ranch`, `victorian`\n - People have unique heights: `short`, `very short`, `average`, `tall`, `super tall`, `very tall`\n - People have unique hair colors: `red`, `black`, `gray`, `brown`, `auburn`, `blonde`\n\n## Clues:\n1. The person who loves the boquet of lilies is not in the fifth house.\n2. The person who is very short is the person who has auburn hair.\n3. Arnold is the person who enjoys camping trips.\n4. The person who has auburn hair is Eric.\n5. The person who goes on cultural tours is somewhere to the left of the person who is super tall.\n6. There are two houses between the person who has gray hair and the person who is short.\n7. The person who is tall is somewhere to the left of the person who has brown hair.\n8. The person in a Craftsman-style house is Bob.\n9. The person who is very short is somewhere to the left of the person who has blonde hair.\n10. The person who is very tall is Bob.\n11. There are two houses between the person who loves the rose bouquet and Peter.\n12. The person in a modern-style house is not in the fourth house.\n13. The person who prefers city breaks is the person who is short.\n14. The person living in a colonial-style house is somewhere to the left of the person who loves the vase of tulips.\n15. The person who loves a carnations arrangement is the person who has brown hair.\n16. The person who has red hair is the person who loves the boquet of lilies.\n17. The person who enjoys mountain retreats is the person residing in a Victorian house.\n18. The person who loves a bouquet of daffodils is the person in a modern-style house.\n19. Arnold is the person who has an average height.\n20. The person in a Mediterranean-style villa is not in the first house.\n21. The person who is tall is not in the fifth house.\n22. The person who loves the vase of tulips is not in the fourth house.\n23. Carol is directly left of Bob.\n24. The person who is very tall is the person who goes on cultural tours.\n25. The person in a Mediterranean-style villa is the person who has red hair.\n26. The person who is super tall is the person who has black hair.\n27. Eric is the person who loves the rose bouquet.\n28. The person who enjoys mountain retreats is directly left of the person who likes going on cruises.\n\nWhat is Flower of the person who lives in House 1?\n\nA. lilies\nB. roses\nC. daffodils\nD. carnations\nE. iris\nF. tulips\n\nAnswer with the letter of the correct option. Think it through, then end your reply with exactly: The answer is (X).",
+   "answer": "B",
+   "official_key": "roses",
+   "max_tokens": 36864,
+   "note": "官方答案：roses（选项固定种子重排）",
+   "base": "lgp-test-6x6-4",
+   "clue_count": 28,
+   "source_id": "lgp-test-6x6-4#mc-1"
+  }
+ ]
+}

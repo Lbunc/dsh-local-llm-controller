@@ -126,8 +126,13 @@
 
 ## 📚 推荐阅读
 
-- [本地模型调优全历程终版存档](docs/measurements/ctx_scan_report.md)：35B / 9B / 27B 多模型实测对比、调优结论、选型建议与长上下文安全上限汇总。
+- [本地模型调优实测存档（分模型报告）](docs/measurements/README.md)：35B / 9B / 27B / Occamy 每模型一份实测报告（含结论速览、横向能力对比、复现脚本与原始日志说明）。
+- [Occamy-1.0 vs Qwen3.6-35B-A3B 完整对比](docs/measurements/occamy_vs_ud_report.md)：同底座 35B MoE 的能力/速度/上下文同会话 A/B——decode +17% vs prefill +32%，以及 `-t 14`、`-ncmoe 22 → 128K` 两条可直接落地的结论。
 - **[llm-experiment-design · DSH 调优 Skill](docs/llm-experiment-design/SKILL.md)**：给新 GGUF 做深度调优用的 Skill——按「运行时探查 → 必要性驱动扫描 → 四件套测量 → 能力验证」流程安排脚本与判读，最终输出一套可复现的最优启动参数（MoE/dense 通用）。
+
+## ⚠️ 已知问题
+
+- **DSH 上下文自动压缩在小窗口下失效**：DSH 的压缩机制（`dsh-compaction-basic`）为摘要调用预留固定 65536 token 的预算（`headroomTokens` 常量，按百万级云端窗口标定），自动压缩阈值 = `min(0.8 × contextWindow, contextWindow − maxTokens − 65536)`。本地小上下文场景下该常量占比过大：131072 窗口阈值被压到 **37.5%**（频繁提前压缩、全量 re-prefill），32768 窗口公式直接为负，**自动压缩静默停用**。临时规避：在用户 agent 预设的 `compaction-basic` config 中显式调小 `headroomTokens` / `maxTokens`（可用 `modelPolicies` 按模型配置）。根因链、逐条实测证据与完整规避方案见 [dsh-local-compaction-report.md](dsh-local-compaction-report.md)。
 
 ## 📄 许可
 
