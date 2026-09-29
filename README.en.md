@@ -28,6 +28,7 @@ The control card lives in Settings → Plugins → Local LLM Controller
 - 📁 **Slot A / B model folders**: all model GGUFs in a folder are auto-scanned into a pickable list; the **mmproj** (vision projector) is auto-detected and auto-attached in vision mode
 - 🎛️ **8 launch-parameter groups** (slot × text/vision × fast/long): rows of `flag + value` freely addable/removable, basics prefilled; `-m` / `-a` / `--port` / `--host` / `--api-key` and vision-mode `--mmproj` are managed by the plugin
 - 🧩 **One-click session hookup**: 「Add to model list」 writes the picked model into the DSH model page (provider `dsh-local`), ready to pick at the bottom of any session
+- 🗜️ **Local compaction engine (v2.2.0)**: the `dsh-local-llm-controller/compaction` subpath export replaces the built-in `dsh-compaction-basic` — a proportional threshold (fires around 70% of the window) + a capped tail + a three-tier summary fallback, curing small local windows (32k~150k) where compaction was disabled or re-triggered; see「🗜️ Local compaction engine」
 
 > 🧩 This plugin only connects **DSH ↔ llama.cpp**: it ships neither `llama-server` nor models — those come from upstream [llama.cpp](https://github.com/ggml-org/llama.cpp) and community quantizations (e.g. Hugging Face).
 
@@ -43,14 +44,14 @@ The control card lives in Settings → Plugins → Local LLM Controller
 | :- | :- |
 | `dsh-local-llm-controller` | Package name — installs the latest release from the npm registry |
 | `D:\path\to\dsh-local-llm-controller` | Local folder. Live `link:`, first choice for development; takes effect after `git pull` + DSH restart |
-| `D:\path\to\dsh-local-llm-controller-2.1.0.tgz` | Release `.tgz` package |
+| `D:\path\to\dsh-local-llm-controller-2.2.0.tgz` | Release `.tgz` package |
 | `https://github.com/Lbunc/dsh-local-llm-controller` | GitHub repo. Installs the latest push, may be unstable |
 
 <p align="center"><img src="images/plugin-manager-add.png" width="420" alt="DSH plugin manager: Add plugin dialog with dsh-local-llm-controller entered"></p>
 
 > [!TIP]
 > - 🛠️ If `dsh` is not on PATH (`@deepseek-ai/dsh` not installed globally), fetch the CLI on the fly with Node's built-in npx: `npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller`
-> - 🔍 Check for a newer version first: `dsh plugin --profile web outdated` (no output = up to date); install a pinned version: `dsh plugin --profile web add dsh-local-llm-controller@2.1.0`
+> - 🔍 Check for a newer version first: `dsh plugin --profile web outdated` (no output = up to date); install a pinned version: `dsh plugin --profile web add dsh-local-llm-controller@2.2.0`
 > - 📦 Seeing `Issues with peer dependencies found` during install/upgrade is expected (this plugin's peers are provided by the DSH host, not installed with the package) and does not affect usage.
 
 ### Usage flow
@@ -63,7 +64,7 @@ The control card lives in Settings → Plugins → Local LLM Controller
    <p align="center"><img src="images/setting-plug.png" width="420" alt="Settings → Plugins (config card)"></p>
 
 2. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
-3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**. The written entry's `contextWindow` comes from the slot's fast-group `-c`, `maxTokens` is half of it, and both re-sync to the active preset group on every start (switch fast/long and restart to update).
+3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**. The written entry's `contextWindow` comes from the slot's fast-group `-c`, `maxTokens` is a quarter of it (changed from half to `c/4` in v2.2.0 — an oversized reservation crushes the compaction threshold, see「🗜️ Local compaction engine」), and both re-sync to the active preset group on every start (switch fast/long and restart to update).
 
    <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
 
@@ -130,9 +131,50 @@ The command automatically cleans the profile's bundle registration and dependenc
 - [Occamy-1.0 vs Qwen3.6-35B-A3B Comparison](docs/measurements/occamy_vs_ud_report.md): Same-session A/B of two same-base 35B MoEs across capability/speed/context — occamy +17% decode vs UD +32% prefill, plus two directly actionable findings (`-t 14`, `-ncmoe 22 → 128K`).
 - **[llm-experiment-design · DSH Tuning Skill](docs/llm-experiment-design/SKILL.md)**: The Skill for deep-tuning a new GGUF — it schedules scripts and interprets results via the standard pipeline: runtime probing → necessity-gated scans → four-signal measurements → capability verification, and delivers a reproducible set of optimal launch parameters (MoE + dense both supported).
 
+## 🗜️ Local compaction engine (v2.2.0)
+
+The package now ships a subpath export `dsh-local-llm-controller/compaction`: `LocalCompactionEngine` (extends the official `CompactionEngine`), replacing the built-in `@deepseek-ai/dsh-compaction-basic`. It cures two failure modes of small local windows (32k~150k): the threshold being crushed (or silently disabled) by the hard-coded headroom, and the "summary + tail immediately re-trigger compaction next turn" feedback loop.
+
+> **Status (2026-09-30)**: both controlled tests passed (see "Field results"), but real-session feedback surfaced unreachable thresholds, a non-linear context meter, and invisible compaction records — **currently unusable, pending further development**; see "⚠️ Known issues".
+
+### Wiring it up
+
+Point the compaction row's `name` at this plugin in your user agent preset (`~/.dsh/local-bundles/user-agent-presets/cordis.patch.yml`):
+
+```yaml
+- id: compaction
+  name: 'dsh-local-llm-controller/compaction'
+```
+
+> The engine registers itself as `ctx.compaction`, so the manual `/compact` command keeps working. Optional config keys: `thresholdRatio` / `retainRatio` / `summaryReserveTokens` / `summarizationProvider` + `summarizationModel` (cloud summarization target, configured as a pair) / `compactionRetries` / `maxOverflowRetries` / `auto`.
+
+### Key properties
+
+- **Proportional threshold**: `threshold = min(0.7×W, W − reserved − margin)` with `margin = clamp(0.05×W, 1024, 8192)` — compaction fires around 70% of the context and scales with the window, no longer crushed or silently disabled by a constant headroom
+- **Capped tail by construction**: `tail ≤ min(0.16×(W − reserved), threshold − summaryUpper − margin)` — the post-compaction level sits well below the threshold, eliminating the "summary + tail re-trigger next turn" feedback loop
+- **Summary fallback ladder**: local summarization on the routed model (reuses the KV prefix cache, output budget derived from the remaining space, auto-retry — 2 attempts total by default) → configured cloud summarization target (optional) → truncation-style checkpoint fallback (deterministic, model-free, the session never stalls)
+- **Tool-result pruning before compaction**: old tool results are pruned first; if the level drops below the threshold, the LLM summarization is skipped entirely
+- **Overflow recovery** on agent/request-error, plus a compatible manual `/compact` path
+- **Runtime logs** all carry the `[local-compaction]` prefix (pressure checks / compaction commits / summary fallback / overflow recovery fully traced)
+
+### Companion changes
+
+- The `maxTokens` written by 「Add to model list」 changed from **c/2 to c/4**: a c/2 reservation crushes the threshold (at 0.5W reserved the 131k threshold is only ~0.48W); with c/4 the 32k threshold is 22937 and the 131k threshold 91750 — exactly 70%
+- `package.json` gained the `exports['./compaction']` entry and peerDependencies: `@deepseek-ai/dsh-compaction` / `@deepseek-ai/dsh-llm` / `@deepseek-ai/dsh-session` (`^0.2.0-rc.1`, provided by the DSH host)
+
+### Measured verification
+
+| Preset | Window | Behavior |
+| :- | :- | :- |
+| fast | 32768 | Compacted 13116 → 7103 tokens, then stable — **no re-trigger** |
+| long | 131072 | 96542 heuristic tokens crossed the 91750 threshold; **tool-result pruning alone dropped the level to 13711 (no LLM summarization used)**, and the session kept working at a low level |
+
+Unit tests pass 16/16 (`npm test`, zero-dependency pure functions in `lib/compaction-math.js`).
+
 ## ⚠️ Known issues
 
-- **DSH context auto-compaction breaks down with small windows**: DSH's compaction pipeline (`dsh-compaction-basic`) reserves a fixed 65,536-token budget for the summarization call (`headroomTokens`, a constant calibrated for million-token cloud models); the auto-compaction threshold is `min(0.8 × contextWindow, contextWindow − maxTokens − 65536)`. With small local-model windows this constant dominates: at 131072 the threshold drops to **37.5%** (compaction fires far too early, each trigger costing a full re-prefill), and at 32768 the formula goes negative — **auto-compaction silently disables**. Workaround: explicitly set smaller `headroomTokens` / `maxTokens` (per model via `modelPolicies`) in the `compaction-basic` config of your user agent preset. Root-cause chain, step-by-step evidence, and the full mitigation: [dsh-local-compaction-report.md](dsh-local-compaction-report.md).
+- **Local compaction engine (v2.2.0) is unusable in real sessions, pending further development**: both controlled tests (synthetic fills + log checks) passed, but real-session feedback exposed the following — ① actual context usage never reaches the designed 70% threshold; ② the DSH context meter does not grow linearly (it mixes server-reported tokens with heuristic estimation), so its percentage cannot serve as a threshold reference; ③ compaction records do not show up in the conversation flow, so compaction cannot be confirmed from the UI. Overall verdict: **currently unusable**; re-evaluate after itemized investigation.
+- **DSH context auto-compaction breaks down with small windows**: DSH's compaction pipeline (`dsh-compaction-basic`) reserves a fixed 65,536-token budget for the summarization call (`headroomTokens`, a constant calibrated for million-token cloud models); the auto-compaction threshold is `min(0.8 × contextWindow, contextWindow − maxTokens − 65536)`. With small local-model windows this constant dominates: at 131072 the threshold drops to **37.5%** (compaction fires far too early, each trigger costing a full re-prefill), and at 32768 the formula goes negative — **auto-compaction silently disables**. Workaround: explicitly set smaller `headroomTokens` / `maxTokens` (per model via `modelPolicies`) in the `compaction-basic` config of your user agent preset. Root-cause chain, step-by-step evidence, and the full mitigation: [dsh-local-compaction-report.md](dsh-local-compaction-report.md). **v2.2.0 ships a replacement engine** `dsh-local-llm-controller/compaction` (see「🗜️ Local compaction engine」): controlled tests passed, but real-session feedback surfaced new issues (see the previous item), refinement pending; use the workaround only when upgrading is not an option.
 
 ## 📄 License
 
