@@ -7,6 +7,7 @@ import {
   normalizeArgRow,
   normalizePresets,
   argValue,
+  maxTokensFor,
 } from '../lib/index.js'
 
 test('deriveModelNames: slugifies a GGUF filename into alias + provider key', () => {
@@ -79,4 +80,18 @@ test('normalizePresets: template updates never backfill stored groups', () => {
 test('argValue: returns null when the flag is absent', () => {
   assert.equal(argValue([{ flag: '-c', value: '4096' }], '-ngl'), null)
   assert.equal(argValue(null, '-c'), null)
+})
+
+test('maxTokensFor: half of -c per preset group (fast 16384, long 65536)', () => {
+  assert.equal(maxTokensFor(defaultPresetArgs('text:fast')), 16384)
+  assert.equal(maxTokensFor(defaultPresetArgs('text:long')), 65536)
+  assert.equal(maxTokensFor([{ flag: '-c', value: '40961' }]), 20480) // floor
+})
+
+test('maxTokensFor: null on absent or non-positive -c — caller keeps stored value', () => {
+  assert.equal(maxTokensFor([]), null)
+  assert.equal(maxTokensFor([{ flag: '-ngl', value: '99' }]), null)
+  assert.equal(maxTokensFor([{ flag: '-c', value: '' }]), null)
+  assert.equal(maxTokensFor([{ flag: '-c', value: 'abc' }]), null)
+  assert.equal(maxTokensFor([{ flag: '-c', value: '0' }]), null)
 })

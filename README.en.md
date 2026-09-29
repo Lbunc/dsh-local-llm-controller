@@ -55,7 +55,7 @@ The control card lives in Settings → Plugins → Local LLM Controller
 
 ### Usage flow
 
-1. **Open the card** and fill in the config area:
+1. **Open the config area** and fill in:
    - `llama.cpp directory`: where `llama-server.exe` lives (required)
    - `Port`: default 55555 (「Add to model list」writes the current value into the provider baseURL)
    - `API key`: blank = no auth (loopback only); a placeholder auth header is still written (pi-ai client requires one), and a set value is used on both sides
@@ -63,7 +63,7 @@ The control card lives in Settings → Plugins → Local LLM Controller
    <p align="center"><img src="images/setting-plug.png" width="420" alt="Settings → Plugins (config card)"></p>
 
 2. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
-3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**.
+3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**. The written entry's `contextWindow` comes from the slot's fast-group `-c`, `maxTokens` is half of it, and both re-sync to the active preset group on every start (switch fast/long and restart to update).
 
    <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
 
