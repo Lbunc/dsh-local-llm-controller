@@ -160,7 +160,7 @@ Point the compaction row's `name` at this plugin in your user agent preset (`~/.
 ### Companion changes
 
 - The `maxTokens` written by 「Add to model list」 changed from **c/2 to c/4**: a c/2 reservation crushes the threshold (at 0.5W reserved the 131k threshold is only ~0.48W); with c/4 the 32k threshold is 22937 and the 131k threshold 91750 — exactly 70%
-- `package.json` gained the `exports['./compaction']` entry and peerDependencies: `@deepseek-ai/dsh-compaction` / `@deepseek-ai/dsh-llm` / `@deepseek-ai/dsh-session` (`^0.2.0-rc.1`, provided by the DSH host)
+- `package.json` gained the `exports['./compaction']` entry and peerDependencies: `@deepseek-ai/dsh-compaction` / `@deepseek-ai/dsh-llm` / `@deepseek-ai/dsh-session`. All `@deepseek-ai/dsh-*` peers are declared as `>=0.1.7-rc.1` (provided by the DSH host; the DSH compatibility gate validates with prerelease-inclusive semver, so future DSH upgrades require no version edits, and the range is npm-publish friendly)
 
 ### Measured verification
 

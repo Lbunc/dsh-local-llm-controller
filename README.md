@@ -185,7 +185,7 @@
 ### 配套改动
 
 - 「添加到模型列表」写入的 `maxTokens` 由 **c/2 改为 c/4**：c/2 的 reserved 会把阈值压死（0.5W reserved 时 131k 窗口阈值仅 ~0.48W）；c/4 后 32k 窗口阈值 22937、131k 窗口 91750，恰为 70%
-- `package.json` 新增 `exports['./compaction']` 与 peerDependencies：`@deepseek-ai/dsh-compaction` / `@deepseek-ai/dsh-llm` / `@deepseek-ai/dsh-session`（`^0.2.0-rc.1`，由 DSH 宿主提供）
+- `package.json` 新增 `exports['./compaction']` 与 peerDependencies：`@deepseek-ai/dsh-compaction` / `@deepseek-ai/dsh-llm` / `@deepseek-ai/dsh-session`。所有 `@deepseek-ai/dsh-*` peer 均声明为 `>=0.1.7-rc.1`（由 DSH 宿主提供；DSH 兼容性门以含预发布的 semver 语义校验，后续 DSH 升级无需再改版本号，且该写法对 npm publish 友好）
 
 ### 实测验证
 
