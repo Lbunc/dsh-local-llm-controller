@@ -10,6 +10,8 @@ import {
   maxTokensFor,
 } from '../lib/index.js'
 import { marginTokens, resolveSpec, summaryCallBudget } from '../lib/compaction-math.js'
+import { selectCompactableRange } from '../lib/compaction.js'
+import { compactCheckpointSource } from '@deepseek-ai/dsh-compaction'
 
 test('deriveModelNames: slugifies a GGUF filename into alias + provider key', () => {
   const d = deriveModelNames('Qwen3.6-35B-A3B-Q8_K.gguf')
@@ -142,4 +144,68 @@ test('compaction-math: summaryCallBudget 按剩余空间推导，不足 1024 返
   assert.equal(summaryCallBudget(131072, 90000, 6553), 34519)
   assert.equal(summaryCallBudget(32768, 30106, 1638), 1024) // 边界：恰为下限
   assert.equal(summaryCallBudget(32768, 30107, 1638), null) // 1023 < 1024
+})
+
+// --- 区间选取：纯检查点守卫与非单调 seq 回归（静夜思会话 [130,130] / [148,144]） ---
+
+/** 最小会话桩：仅提供区间选取与工具配对缓存所需的 API（无工具调用 → 全部边界平衡）。 */
+function fakeSession(events, nodes) {
+  const seqs = nodes ?? events.map((_, seq) => seq)
+  return {
+    surface: { nodes: seqs, replaceGeneration: 0 },
+    eventAt: (seq) => (events[seq] === undefined ? undefined : { ...events[seq], seq }),
+    deriveEventMessage: (event) => (event === undefined || event.type !== 'user/message' ? null : event.data),
+  }
+}
+
+const priced = (seqs, tokens) => ({
+  nodes: seqs.map((seq, index) => ({ seq, tokens: tokens[index] })),
+  totalTokens: tokens.reduce((a, b) => a + b, 0),
+})
+const systemEv = (tokens) => ({ type: 'system/message', data: {}, tokens })
+const userEv = (tokens) => ({ type: 'user/message', data: { role: 'user', content: [{ type: 'text', text: 'hello' }] }, tokens })
+const checkpointEv = (tokens) => ({
+  type: 'user/message',
+  data: { role: 'user', content: [{ type: 'text', text: '## 检查点' }], source: compactCheckpointSource('test-id') },
+  tokens,
+})
+
+test('selectCompactableRange: 纯检查点区间返回 null（[130,130] 回归）', () => {
+  // 表面 = [system, 检查点C1, 大消息]：尾巴预算恰被大消息吃满时，唯一候选区间
+  // 是刚生成的检查点本身 —— 旧实现会选取它（摘要的摘要），几乎必然触发
+  // “摘要不小于被替换内容”并浪费一次 LLM 调用；修复后直接返回 null
+  const session = fakeSession([systemEv(10), checkpointEv(200), userEv(5000)])
+  assert.equal(selectCompactableRange(session, priced([0, 1, 2], [10, 200, 5000]), 4000), null)
+})
+
+test('selectCompactableRange: 检查点+真实消息的区间正常选取（[130,135] 形态）', () => {
+  const session = fakeSession([systemEv(10), checkpointEv(200), userEv(1000), userEv(1000)])
+  const range = selectCompactableRange(session, priced([0, 1, 2, 3], [10, 200, 1000, 1000]), 900)
+  assert.deepEqual(range, { start: 1, end: 2 })
+})
+
+test('selectCompactableRange: 检查点 seq 高于逻辑后继（[148,144] 形态）按表面顺序选取', () => {
+  // 检查点提交时才追加到事件日志，seq(148) 大于逻辑后继(136/137)；表面逻辑
+  // 顺序仍是 [system, C2, 136, 137] —— 区间合法，两端 seq 非单调不是倒挂
+  const events = []
+  events[0] = systemEv(10)
+  events[148] = checkpointEv(200)
+  events[136] = userEv(500)
+  events[137] = userEv(500)
+  const seqs = [0, 148, 136, 137]
+  const session = fakeSession(events, seqs)
+  const range = selectCompactableRange(session, priced(seqs, [10, 200, 500, 500]), 500)
+  assert.deepEqual(range, { start: 148, end: 136 })
+})
+
+test('selectCompactableRange: 表面仅剩检查点时返回 null（/compact 空转形态）', () => {
+  const session = fakeSession([checkpointEv(100), checkpointEv(200)])
+  assert.equal(selectCompactableRange(session, priced([0, 1], [100, 200]), 0), null)
+})
+
+test('selectCompactableRange: 单条真实消息的区间仍合法（守卫不误伤）', () => {
+  // 尾巴预算 1000 恰由末条消息满足 → keepFromIdx=2，区间 = 表面[1..1] 单条真实消息
+  const session = fakeSession([systemEv(10), userEv(1000), userEv(1000)])
+  const range = selectCompactableRange(session, priced([0, 1, 2], [10, 1000, 1000]), 1000)
+  assert.deepEqual(range, { start: 1, end: 1 })
 })
