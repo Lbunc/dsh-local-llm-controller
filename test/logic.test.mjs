@@ -2,6 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   PRESET_GROUPS,
+  SWITCH_FLAGS,
+  buildPresetArgv,
   deriveModelNames,
   defaultPresetArgs,
   normalizeArgRow,
@@ -36,6 +38,58 @@ test('defaultPresetArgs: covers the base set and carries -c per group', () => {
   assert.equal(argValue(fast, '--presence-penalty'), '0')
   assert.equal(argValue(long, '--repeat-penalty'), '1')
   assert.equal(argValue(long, '--presence-penalty'), '0')
+})
+
+test('defaultPresetArgs: no value-taking flag ships with an empty value', () => {
+  // 回归：默认模板曾带 `--reasoning-budget`（空值）→ buildPresetArgv 发出裸 flag
+  // → llama.cpp 把后面的 -c 当成它的值 → "invalid stoi argument"，服务器起不来。
+  for (const g of PRESET_GROUPS) {
+    for (const r of defaultPresetArgs(g)) {
+      if (SWITCH_FLAGS.has(r.flag)) continue
+      assert.notEqual(r.value, '', `${g} ${r.flag} 需要值但为空`)
+    }
+  }
+  // 卸载档是 12GB 卡上跑 18GB MoE 模型的必要条件（-ngl 99 会阻止自动 fit）
+  assert.equal(argValue(defaultPresetArgs('text:fast'), '-ncmoe'), '26')
+  assert.equal(argValue(defaultPresetArgs('text:long'), '-ncmoe'), '26')
+  assert.equal(argValue(defaultPresetArgs('vision:fast'), '-ncmoe'), '26')
+  assert.equal(argValue(defaultPresetArgs('vision:long'), '-ncmoe'), '26')
+})
+
+test('buildPresetArgv: 空值的取值型 flag 被整行丢弃，绝不发裸 flag（顺序回归）', () => {
+  // 这是上面那条 bug 的核心：裸 --reasoning-budget 会吞掉紧随其后的 -c
+  const argv = buildPresetArgv([
+    { flag: '--reasoning-budget', value: '' },
+    { flag: '-c', value: '32768' },
+  ])
+  assert.deepEqual(argv, ['-c', '32768'])
+})
+
+test('buildPresetArgv: 纯开关始终发出，带值时值跟随；空 flag 行被忽略', () => {
+  assert.deepEqual(
+    buildPresetArgv([
+      { flag: '--metrics', value: '' },
+      { flag: '--slots', value: '' },
+      { flag: '-ngl', value: '99' },
+      { flag: '', value: 'x' },
+      null,
+    ]),
+    ['--metrics', '--slots', '-ngl', '99'],
+  )
+  assert.deepEqual(buildPresetArgv(null), [])
+  assert.deepEqual(buildPresetArgv([]), [])
+})
+
+test('buildPresetArgv: 默认模板产出的 argv 里每个取值型 flag 后面都跟着值', () => {
+  const argv = buildPresetArgv(defaultPresetArgs('text:fast'))
+  // 从 -ngl 起逐对检查：非开关 flag 必须紧跟一个值
+  for (let i = 0; i < argv.length; i++) {
+    const tok = argv[i]
+    if (!tok.startsWith('-')) continue
+    if (SWITCH_FLAGS.has(tok)) continue
+    const next = argv[i + 1]
+    assert.ok(next !== undefined && !next.startsWith('--'), `${tok} 后面缺少值`)
+  }
 })
 
 test('normalizeArgRow: drops invalid rows, coerces values', () => {
