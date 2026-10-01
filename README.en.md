@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 dsh-local-llm-controller
+# dsh-local-llm-controller
 
 <img src="images/wallpaper.jpg" alt="dsh-local-llm-controller" width="100%">
 
@@ -20,94 +20,123 @@ The control card lives in Settings → Plugins → Local LLM Controller
 
 ***
 
-> ⚠️ **DSH changed massively under the hood in 0.1.7-rc.1 — only plugin v2.1.0+ is compatible (RC release branch only; other branches are not guaranteed to work).**
+> **Compatibility note**: DSH 0.1.7-rc.1 introduced massive internal changes. Plugin v2.1.0 and later target this architecture (RC branch only; other branches are not guaranteed to work).
 
-## ✨ Features
+## Features
 
-- ⚡ **One-click start/stop of a local `llama-server`**: launch/stop right from the Settings → Plugins card; status, error reason and recent logs show on the same card; DSH reaps plugin child processes on restart
-- 📁 **Slot A / B model folders**: all model GGUFs in a folder are auto-scanned into a pickable list; the **mmproj** (vision projector) is auto-detected and auto-attached in vision mode
-- 🎛️ **8 launch-parameter groups** (slot × text/vision × fast/long): rows of `flag + value` freely addable/removable, basics prefilled; `-m` / `-a` / `--port` / `--host` / `--api-key` and vision-mode `--mmproj` are managed by the plugin
-- 🧩 **One-click session hookup**: 「Add to model list」 writes the picked model into the DSH model page (provider `dsh-local`), ready to pick at the bottom of any session
-- 🗜️ **Local compaction engine (v2.2.0)**: the `dsh-local-llm-controller/compaction` subpath export replaces the built-in `dsh-compaction-basic` — a proportional threshold (fires around 70% of the window) + a capped tail + a three-tier summary fallback, curing small local windows (32k~150k) where compaction was disabled or re-triggered; see「🗜️ Local compaction engine」
+- **One-click local server control**: launch or stop llama-server from the Settings → Plugins card; status, error reason and recent logs show on the same card. DSH reaps plugin child processes on restart.
+- **Dual-slot model management**: slots A / B each bind a model folder; all GGUFs inside are auto-scanned into a pickable list. The vision projector (mmproj) is auto-detected and auto-attached in vision mode.
+- **Eight launch-parameter groups**: organized by slot × text/vision × fast/long, with freely editable rows and prefilled basics.
+- **One-click session hookup**: writes the picked model into the DSH model page (see the entry table in the usage flow), ready to pick at the bottom of any session.
+- **Local compaction engine** (v2.1.2): shipped as a subpath export, a local replacement for the DSH built-in compaction engine targeting 32k~150k windows. See "Local compaction engine".
 
-> 🧩 This plugin only connects **DSH ↔ llama.cpp**: it ships neither `llama-server` nor models — those come from upstream [llama.cpp](https://github.com/ggml-org/llama.cpp) and community quantizations (e.g. Hugging Face).
+> This plugin only connects DSH ↔ llama.cpp: it ships neither the llama-server binary nor models. Those come from upstream [llama.cpp](https://github.com/ggml-org/llama.cpp) and community quantizations (e.g. Hugging Face).
 
-## 🚀 Quick start
+## Quick start
 
 ### Install
 
-**DSH built-in plugin manager (recommended)**: sidebar **Settings → Plugins → Add plugin**, enter any address from the table below → pick the install source → **Install** → enable. **No DSH Web restart needed** after install.
+Recommended: the DSH built-in plugin manager. Sidebar **Settings → Plugins → Add plugin**, enter any address from the table below, pick the install source, then install and enable. No DSH Web restart is needed afterwards.
 
-**Command line**: `dsh plugin --profile web add "<address>"` (upgrade = rerun the same command; prints `Already up to date` when already current)
+Command line (rerunning the same command upgrades; prints Already up to date when current):
+
+```text
+dsh plugin --profile web add <address>
+```
 
 | Address form | Notes |
 | :- | :- |
-| `dsh-local-llm-controller` | Package name — installs the latest release from the npm registry |
-| `D:\path\to\dsh-local-llm-controller` | Local folder. Live `link:`, first choice for development; takes effect after `git pull` + DSH restart |
-| `D:\path\to\dsh-local-llm-controller-2.2.0.tgz` | Release `.tgz` package |
-| `https://github.com/Lbunc/dsh-local-llm-controller` | GitHub repo. Installs the latest push, may be unstable |
+| dsh-local-llm-controller | Package name — installs the latest release from the npm registry |
+| Local folder path | Live link, first choice for development; takes effect after pulling updates and restarting DSH |
+| Release tgz package path | Offline install from a published package |
+| GitHub repository URL | Installs the latest push; may be unstable |
 
 <p align="center"><img src="images/plugin-manager-add.png" width="420" alt="DSH plugin manager: Add plugin dialog with dsh-local-llm-controller entered"></p>
 
-> [!TIP]
-> - 🛠️ If `dsh` is not on PATH (`@deepseek-ai/dsh` not installed globally), fetch the CLI on the fly with Node's built-in npx: `npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller`
-> - 🔍 Check for a newer version first: `dsh plugin --profile web outdated` (no output = up to date); install a pinned version: `dsh plugin --profile web add dsh-local-llm-controller@2.2.0`
-> - 📦 Seeing `Issues with peer dependencies found` during install/upgrade is expected (this plugin's peers are provided by the DSH host, not installed with the package) and does not affect usage.
+Common commands:
+
+```text
+dsh plugin --profile web outdated                                       # check updates; no output = up to date
+dsh plugin --profile web add dsh-local-llm-controller@2.1.2             # install a pinned version
+npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller  # equivalent when the dsh CLI is not installed globally
+```
+
+> [!NOTE]
+> Seeing peer-dependency warnings during install/upgrade is expected: this plugin's peer dependencies are provided by the DSH host, not installed with the package. It does not affect usage.
 
 ### Usage flow
 
-1. **Open the config area** and fill in:
-   - `llama.cpp directory`: where `llama-server.exe` lives (required)
-   - `Port`: default 55555 (「Add to model list」writes the current value into the provider baseURL)
-   - `API key`: blank = no auth (loopback only); a placeholder auth header is still written (pi-ai client requires one), and a set value is used on both sides
+1. **Basic connection**: open the config card, fill in the fields below, then save.
+
+   | Field | Notes |
+   | :- | :- |
+   | llama.cpp directory | Folder containing the llama-server executable; required |
+   | Port | Default 55555; written into the provider baseURL by Add to model list |
+   | API key | Blank = no auth (loopback only); a placeholder auth header is written either way (client protocol requirement) |
 
    <p align="center"><img src="images/setting-plug.png" width="420" alt="Settings → Plugins (config card)"></p>
 
-2. **Slot A / B config**: enter a **model folder path** each (containing model GGUFs; add an mmproj for vision) → click **「Save config」**.
-3. **Add the model to the model list**: after saving, all model GGUFs in the folder become bubbles (mmproj never appears — it is wired automatically in vision mode) → pick one → **「Save config」** → **「Add to model list」**. The model name is **derived** from the file name; rename / change the display name on **Settings → Models**. The written entry's `contextWindow` comes from the slot's fast-group `-c`, `maxTokens` is a quarter of it (changed from half to `c/4` in v2.2.0 — an oversized reservation crushes the compaction threshold, see「🗜️ Local compaction engine」), and both re-sync to the active preset group on every start (switch fast/long and restart to update).
+2. **Slots**: enter a model folder path for each of slots A / B (containing the model GGUFs; add an mmproj for vision), then click Save config.
+3. **Add to model list**: after saving, all model GGUFs in the folder become candidate bubbles (mmproj never appears — it is wired automatically in vision mode). Pick one, save, then click Add to model list. The model name is derived from the file name; rename on the Settings → Models page if needed. Entries re-sync to the active preset group on every start (switch fast/long and restart to update), with these values:
 
-   <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
+   | Written entry | Value |
+   | :- | :- |
+   | contextWindow | The slot's fast-group -c value |
+   | maxTokens | One quarter of that -c value (reduced from one half in v2.1.2: an oversized reservation crushes the compaction threshold — see "Local compaction engine") |
 
-4. **Launch parameters** (8 groups = slot × text/vision × fast/long): the group being edited is shown as「Launch args (current combo)」; each row is a `flag` + `value` pair of inputs, with **+ add row** and **× delete row**. Basics are prefilled (`-ngl`/`-t`/`-c`/sampling…); see the recommended sets in 「📐 Recommended launch parameters」 below and the [llama.cpp docs](https://github.com/ggml-org/llama.cpp). `-m`/`-a`/`--port`/`--host`/`--api-key` and vision-mode `--mmproj` are managed automatically — never add them manually.
+4. **Launch parameters**: eight groups (slot × text/vision × fast/long); the group being edited is shown in the editor title. Each row is a flag/value pair with add and remove controls; basics are prefilled and recommended sets are in "Recommended launch parameters". The following are managed by the plugin — never add them manually:
+
+   | Plugin-managed parameters | Applies to |
+   | :- | :- |
+   | -m / -a / --port / --host / --api-key | All modes (auth header enabled when a key is set) |
+   | --mmproj / --image-min-tokens | Vision mode |
 
    <p align="center"><img src="images/params.png" width="420" alt="Launch parameter rows (one of 8 groups)"></p>
 
-5. **Launch zone**: choose slot A/B → mode (text/vision) → preset (fast/long) → click **「Start」**.
-6. **Chat**: once the status turns Running, pick the local model at the bottom of a session; **「Stop」** releases the port; errors show the reason and recent logs on the card.
+5. **Launch**: choose slot (A/B), mode (text/vision), preset (fast/long), then click Start.
+
+   <p align="center"><img src="images/setting-model.png" width="420" alt="Settings → Models (after Add to model list)"></p>
+
+6. **Chat**: once the status turns Running, pick the local model at the bottom of a session; Stop releases the port; errors show the reason and recent logs on the card.
 
    <p align="center"><img src="images/useing.png" width="420" alt="Pick the local model in a session to chat"></p>
 
-### ⚠️ Notes
+### Notes
 
-- **After switching the model file in the same slot**: the Provider Key changes with the file name — the old key in **Settings → Models** is **never overwritten/removed automatically**; delete the old entry manually, then click「Add to model list」to write the new one.
-- **Vision images**: the image decoder of old llama-server builds **does not support WebP**. This plugin raises DSH's image-request budget to 16MiB / 4096², so regular **PNG/JPEG screenshots and large images pass through untouched**; **WebP source files** must be converted to PNG/JPEG first.
-- The **mmproj** (vision projector) in the model folder is auto-detected and auto-attached in vision mode; its file name must contain `mmproj`.
-- To pin a Provider Key (so switching model files does not break existing model selections): rename the model on **Settings → Models** — the plugin keeps using the derived key as-is; models-page edits do not write back into the plugin config.
+- After switching the model file in the same slot, the Provider Key changes with the file name: the old entry on the Settings → Models page is never overwritten or removed automatically. Delete it manually, then write the new one.
+- The image decoder of old llama-server builds does not support WebP. This plugin raises DSH's image-request budget to 16 MiB / 4096², so regular PNG/JPEG screenshots and large images pass through untouched; convert WebP sources to PNG/JPEG before sending.
+- The vision projector file must contain mmproj in its file name to be auto-detected.
+- To pin a Provider Key (so switching model files does not break existing model selections), rename the model on the Settings → Models page; models-page edits do not write back into the plugin config.
 
 ### Uninstall
 
-1. **Before uninstalling**: if a model is running, click **「Stop」** on the card first (optional — DSH reaps plugin children on restart); if the **default model** or a preset is set to a local model (provider `dsh-local`), switch it back to a cloud model first, or the default model dangles.
-2. **Plugin manager**: the **Uninstall** button on the plugin row; **command line**: `dsh plugin --profile web remove dsh-local-llm-controller` (bundle registration and the `link:` dependency are purged automatically).
-3. Refresh the page — the card disappears (no DSH restart needed).
+1. If a model is running, click Stop on the card first (optional — DSH reaps plugin children on restart). If the default model or a preset is set to a local model, switch it back to a cloud model before uninstalling, or the default model dangles.
+2. Use the Uninstall button on the plugin row, or run (bundle registration and the link dependency are purged automatically):
 
-The command automatically cleans the profile's bundle registration and dependency (`profiles/web/package.json`, `pnpm-lock.yaml`). The following are **not** auto-removed (verified on v2.1.0 / DSH 0.1.7-rc.1):
+   ```text
+   dsh plugin --profile web remove dsh-local-llm-controller
+   ```
 
-| Leftovers (optional cleanup)                                         | Notes                                                                                                                                                       |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `~/.dsh/local-llm.config.json`                                       | **The card config** (llama.cpp dir, port and all 8 launch-parameter groups). Keep it if you plan to reinstall; delete only when fully abandoning the plugin |
-| `llm-pi-ai.providers.dsh-local` (in `profiles/web/cordis.patch.yml`) | The model-page entry written by 「Add to Model List」; still usable when running the same port manually, delete if truly unused                               |
-| The version-exempt line in `pnpm-workspace.yaml`                     | One line of install metadata (`dsh-local-llm-controller@…`) that remove does not recycle; harmless, ignore it                                               |
+3. Refresh the page — the card disappears. No DSH restart needed.
+
+The command automatically cleans the profile's bundle registration and dependency declaration. The following are not auto-removed (verified on v2.1.0 / DSH 0.1.7-rc.1):
+
+| Leftover (optional cleanup) | Notes |
+| :- | :- |
+| ~/.dsh/local-llm.config.json | The card config (llama.cpp directory, port, all eight launch-parameter groups). Keep it if you plan to reinstall |
+| llm-pi-ai.providers.dsh-local in the profile patch | The model-page entry written by Add to model list; still usable when running the same port manually, delete if unused |
+| The version-exempt line in pnpm-workspace.yaml | Install metadata that remove does not recycle; harmless |
 
 > [!NOTE]
-> 🔄 **Upgrading from v2.0.x**: the old `local-llm` section in `settings.yaml` was renamed into `settings.yaml.imported` during the one-time DSH 0.1.7 import; nothing reads it anymore, no action needed.
+> Upgrading from v2.0.x: the old local-llm section in settings.yaml was renamed into settings.yaml.imported during the one-time DSH 0.1.7 import; nothing reads it anymore, no action needed.
 
-## 📐 Recommended launch parameters (8 sets, v1.x measured baseline)
+## Recommended launch parameters
 
-> Parameters the plugin manages automatically — never add them manually: `-m` / `-a` / `--port` / `--host` / `--api-key` (when a key is set) and vision-mode `--mmproj` / `--image-min-tokens`. Each line below is one set — paste it into the matching launch-parameter group, or use it to run `llama-server` manually.
+> Baseline measured on v1.x. Each line below is one set — paste it into the matching launch-parameter group, or use it to run llama-server manually. Plugin-managed parameters are never added manually (see usage flow step 4).
 
 **35B** (Qwen3.6-35B-A3B, MoE):
 
-```
+```text
 35B · text · fast        : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 32768 -ncmoe 20 --reasoning-budget 2048 --metrics --slots
 35B · text · long        : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 131072 -ncmoe 22 --reasoning-budget 2048 --metrics --slots
 35B · vision · fast      : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 32768 -ncmoe 24 --reasoning-budget 2048 --metrics --slots
@@ -116,67 +145,109 @@ The command automatically cleans the profile's bundle registration and dependenc
 
 **9B** (Qwen3.5-9B, Dense):
 
-```
+```text
 9B · text · fast        : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 32768 --metrics --slots
 9B · text · long        : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
 9B · vision · fast      : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 32768 --metrics --slots
 9B · vision · long      : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
 ```
 
-> 📌 For the 35B, `-ncmoe` (MoE expert offload count) and `--reasoning-budget` are measured optimizations; reliable long-context ceilings are `-c 131072` (35B, ncmoe 22) / `-c 65536` (9B) — `-c 196608` is the hard cliff (KV spills into shared memory). For full measurements, model-selection conclusions, and the experiment methodology, see **Further reading** below.
+| Measured conclusions | Notes |
+| :- | :- |
+| -ncmoe (MoE expert offload count) and --reasoning-budget | Two measured optimization points for the 35B |
+| Reliable long-context ceiling | 131072 for the 35B (ncmoe 22); 65536 for the 9B |
+| 196608 | Hard cliff — the KV cache spills into shared memory |
 
-## 📖 Further reading
+Full measurements, model-selection conclusions, and the experiment methodology are in "Further reading".
 
-- [Tuning Report Archive (per-model reports)](docs/measurements/README.md): One report per model — 35B / 9B / 27B / Occamy — with a conclusions digest, cross-model capability comparison, and reproduction scripts & raw-log notes.
-- [Occamy-1.0 vs Qwen3.6-35B-A3B Comparison](docs/measurements/occamy_vs_ud_report.md): Same-session A/B of two same-base 35B MoEs across capability/speed/context — occamy +17% decode vs UD +32% prefill, plus two directly actionable findings (`-t 14`, `-ncmoe 22 → 128K`).
-- **[llm-experiment-design · DSH Tuning Skill](docs/llm-experiment-design/SKILL.md)**: The Skill for deep-tuning a new GGUF — it schedules scripts and interprets results via the standard pipeline: runtime probing → necessity-gated scans → four-signal measurements → capability verification, and delivers a reproducible set of optimal launch parameters (MoE + dense both supported).
+## Further reading
 
-## 🗜️ Local compaction engine (v2.2.0)
+- [Tuning report archive (per-model reports)](docs/measurements/README.md): one report per model — 35B / 9B / 27B / Occamy — with a conclusions digest, cross-model capability comparison, and reproduction scripts & raw-log notes.
+- [Occamy-1.0 vs Qwen3.6-35B-A3B comparison](docs/measurements/occamy_vs_ud_report.md): same-session A/B of two same-base 35B MoEs across capability, speed and context, quantified as +17% decode versus +32% prefill.
+- [llm-experiment-design · DSH tuning skill](docs/llm-experiment-design/SKILL.md): a skill for deep-tuning a new GGUF, scheduling scripts and interpreting results through the pipeline of runtime probing → necessity-gated scans → four-signal measurements → capability verification, delivering a reproducible set of optimal launch parameters (MoE and dense both supported).
 
-The package now ships a subpath export `dsh-local-llm-controller/compaction`: `LocalCompactionEngine` (extends the official `CompactionEngine`), replacing the built-in `@deepseek-ai/dsh-compaction-basic`. It cures two failure modes of small local windows (32k~150k): the threshold being crushed (or silently disabled) by the hard-coded headroom, and the "summary + tail immediately re-trigger compaction next turn" feedback loop.
+## Local compaction engine (v2.1.2)
 
-> **Status (2026-09-30)**: both controlled tests passed (see "Field results"), but real-session feedback surfaced unreachable thresholds, a non-linear context meter, and invisible compaction records — **currently unusable, pending further development**; see "⚠️ Known issues".
+The plugin ships a compaction engine, LocalCompactionEngine, as a subpath export. It extends the official CompactionEngine base class and replaces the DSH built-in compaction engine. Targeting 32k~150k local context windows, it fixes two failure modes of the built-in engine: the trigger threshold being crushed (or silently disabled) by a fixed reservation, and a feedback loop in which the post-compaction usage re-triggers compaction on the next turn.
 
-### Wiring it up
+### Package name and form
 
-Point the compaction row's `name` at this plugin in your user agent preset (`~/.dsh/local-bundles/user-agent-presets/cordis.patch.yml`):
+| Item | Notes |
+| :- | :- |
+| Engine entry | Subpath export dsh-local-llm-controller/compaction |
+| Exported class | LocalCompactionEngine, extending CompactionEngine from @deepseek-ai/dsh-compaction |
+| Replaces | @deepseek-ai/dsh-compaction-basic (the DSH built-in compaction engine) |
+| Runtime registration | The engine registers as ctx.compaction; the manual /compact command stays compatible |
+| Host dependencies | @deepseek-ai/dsh-* declared as >=0.1.7-rc.1, provided by the DSH host — future DSH upgrades require no version edits |
+
+### Differences from the DSH default
+
+| Aspect | DSH default (dsh-compaction-basic) | This engine |
+| :- | :- | :- |
+| Trigger threshold | min(0.8W, W − maxTokens − 65536) — a fixed-constant reservation | min(0.7W, W − reserved − margin) — proportional to the window |
+| Small-window behavior | Formula goes negative at 32768 (auto-compaction silently disabled); at 131072 the threshold drops to 37.5%, firing far too early | Threshold 22937 at 32768 and 91750 at 131072 — both about 70% |
+| Re-triggering | Summary plus retained tail can exceed the threshold again next turn | The capped-tail construction keeps the post-compaction usage well below the threshold, eliminating the feedback loop |
+| Summarization call | Fixed 65,536-token budget | Three-tier fallback (below), output budget derived from remaining space |
+| Tool-result pruning | Optional | Enforced before compaction; if the usage drops below the threshold, LLM summarization is skipped entirely |
+| Intended window | Million-token cloud models | 32k~150k local windows |
+
+### Core mechanisms
+
+| Mechanism | Notes |
+| :- | :- |
+| Proportional threshold | threshold = min(0.7W, W − reserved − margin), margin = clamp(0.05W, 1024, 8192) |
+| Capped tail | tail ≤ min(0.16 × (W − reserved), threshold − summaryUpper − margin) |
+| Summary fallback | Local summarization on the routed model (reuses the KV prefix cache, auto-retry — 2 attempts total by default) → configured cloud summarization target (optional) → truncation-style checkpoint fallback (deterministic, model-free, the session never stalls) |
+| Pre-pruning | Old tool results are pruned before compaction; if the usage drops below the threshold, LLM summarization is skipped entirely |
+| Overflow recovery | Automatic recovery on request-window overflow; the manual compaction path stays compatible |
+| Runtime logs | All lines carry the [local-compaction] prefix, covering pressure checks, compaction commits, summary fallback, and overflow recovery |
+
+### Adoption: create a custom agent mode
+
+The engine cannot automatically replace the compaction group built into the shipped presets: the official patch mechanism cannot address the plugin list inside a preset. To use it, create a custom agent mode (preset) in DSH and declare a compaction group in its plugin list:
 
 ```yaml
 - id: compaction
-  name: 'dsh-local-llm-controller/compaction'
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: local-compaction
+      name: 'dsh-local-llm-controller/compaction'
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 4096
+        headChars: 2048
+        tailChars: 512
 ```
 
-> The engine registers itself as `ctx.compaction`, so the manual `/compact` command keeps working. Optional config keys: `thresholdRatio` / `retainRatio` / `summaryReserveTokens` / `summarizationProvider` + `summarizationModel` (cloud summarization target, configured as a pair) / `compactionRetries` / `maxOverflowRetries` / `auto`.
+> The isolate field must be kept: the engine reads the tool-result pruner through ctx.get, so both must share the same isolate realm.
 
-### Key properties
+Presets can be declared in a user-level patch file (registered into the profile as a link dependency and listed under dsh.profile.bundles) or created with the web settings editor. Fallback and disable: point the compaction child row's name back to @deepseek-ai/dsh-compaction-basic to restore the official engine; restart DSH to take effect (bundle patch files do not hot-reload).
 
-- **Proportional threshold**: `threshold = min(0.7×W, W − reserved − margin)` with `margin = clamp(0.05×W, 1024, 8192)` — compaction fires around 70% of the context and scales with the window, no longer crushed or silently disabled by a constant headroom
-- **Capped tail by construction**: `tail ≤ min(0.16×(W − reserved), threshold − summaryUpper − margin)` — the post-compaction level sits well below the threshold, eliminating the "summary + tail re-trigger next turn" feedback loop
-- **Summary fallback ladder**: local summarization on the routed model (reuses the KV prefix cache, output budget derived from the remaining space, auto-retry — 2 attempts total by default) → configured cloud summarization target (optional) → truncation-style checkpoint fallback (deterministic, model-free, the session never stalls)
-- **Tool-result pruning before compaction**: old tool results are pruned first; if the level drops below the threshold, the LLM summarization is skipped entirely
-- **Overflow recovery** on agent/request-error, plus a compatible manual `/compact` path
-- **Runtime logs** all carry the `[local-compaction]` prefix (pressure checks / compaction commits / summary fallback / overflow recovery fully traced)
+Optional engine-row configuration:
 
-### Companion changes
+| Key | Notes |
+| :- | :- |
+| thresholdRatio / retainRatio / summaryReserveTokens | Threshold and reservation parameters |
+| summarizationProvider / summarizationModel | Cloud summarization target, configured as a pair |
+| compactionRetries / maxOverflowRetries | Retry counts for compaction and overflow recovery |
+| auto | Auto-compaction switch |
 
-- The `maxTokens` written by 「Add to model list」 changed from **c/2 to c/4**: a c/2 reservation crushes the threshold (at 0.5W reserved the 131k threshold is only ~0.48W); with c/4 the 32k threshold is 22937 and the 131k threshold 91750 — exactly 70%
-- `package.json` gained the `exports['./compaction']` entry and peerDependencies: `@deepseek-ai/dsh-compaction` / `@deepseek-ai/dsh-llm` / `@deepseek-ai/dsh-session`. All `@deepseek-ai/dsh-*` peers are declared as `>=0.1.7-rc.1` (provided by the DSH host; the DSH compatibility gate validates with prerelease-inclusive semver, so future DSH upgrades require no version edits, and the range is npm-publish friendly)
-
-### Measured verification
+### Field results
 
 | Preset | Window | Behavior |
 | :- | :- | :- |
-| fast | 32768 | Compacted 13116 → 7103 tokens, then stable — **no re-trigger** |
-| long | 131072 | 96542 heuristic tokens crossed the 91750 threshold; **tool-result pruning alone dropped the level to 13711 (no LLM summarization used)**, and the session kept working at a low level |
+| fast | 32768 | Controlled test: compacted 13116 → 7103 tokens, then stable — no re-trigger |
+| long | 131072 | Real session: three threshold crossings (93313 / 91924 / 93973) were each resolved by tool-result pruning alone (down to 69189 at the lowest), with no LLM summarization; at the next crossing (93290) compaction ran, producing a ~1817-token local summary and dropping the usage to 44479 tokens, stable afterwards |
 
-Unit tests pass 16/16 (`npm test`, zero-dependency pure functions in `lib/compaction-math.js`).
 
-## ⚠️ Known issues
-
-- **Local compaction engine (v2.2.0) is unusable in real sessions, pending further development**: both controlled tests (synthetic fills + log checks) passed, but real-session feedback exposed the following — ① actual context usage never reaches the designed 70% threshold; ② the DSH context meter does not grow linearly (it mixes server-reported tokens with heuristic estimation), so its percentage cannot serve as a threshold reference; ③ compaction records do not show up in the conversation flow, so compaction cannot be confirmed from the UI. Overall verdict: **currently unusable**; re-evaluate after itemized investigation.
-- **DSH context auto-compaction breaks down with small windows**: DSH's compaction pipeline (`dsh-compaction-basic`) reserves a fixed 65,536-token budget for the summarization call (`headroomTokens`, a constant calibrated for million-token cloud models); the auto-compaction threshold is `min(0.8 × contextWindow, contextWindow − maxTokens − 65536)`. With small local-model windows this constant dominates: at 131072 the threshold drops to **37.5%** (compaction fires far too early, each trigger costing a full re-prefill), and at 32768 the formula goes negative — **auto-compaction silently disables**. Workaround: explicitly set smaller `headroomTokens` / `maxTokens` (per model via `modelPolicies`) in the `compaction-basic` config of your user agent preset. Root-cause chain, step-by-step evidence, and the full mitigation: [dsh-local-compaction-report.md](dsh-local-compaction-report.md). **v2.2.0 ships a replacement engine** `dsh-local-llm-controller/compaction` (see「🗜️ Local compaction engine」): controlled tests passed, but real-session feedback surfaced new issues (see the previous item), refinement pending; use the workaround only when upgrading is not an option.
-
-## 📄 License
+## License
 
 <div align="center">
 
