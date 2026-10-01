@@ -49,11 +49,28 @@ test('defaultPresetArgs: no value-taking flag ships with an empty value', () => 
       assert.notEqual(r.value, '', `${g} ${r.flag} 需要值但为空`)
     }
   }
-  // 卸载档是 12GB 卡上跑 18GB MoE 模型的必要条件（-ngl 99 会阻止自动 fit）
-  assert.equal(argValue(defaultPresetArgs('text:fast'), '-ncmoe'), '26')
-  assert.equal(argValue(defaultPresetArgs('text:long'), '-ncmoe'), '26')
-  assert.equal(argValue(defaultPresetArgs('vision:fast'), '-ncmoe'), '26')
-  assert.equal(argValue(defaultPresetArgs('vision:long'), '-ncmoe'), '26')
+})
+
+test('defaultPresetArgs: 只含通用参数，不针对特定模型做调优', () => {
+  // -ncmoe 是「模型大小 vs 显卡」相关的调优项，无法在不知道模型的前提下取值
+  // （llama.cpp 自动 fit 在 -ngl 被显式指定时会放弃选它），因此不属于通用默认值
+  for (const g of PRESET_GROUPS) {
+    assert.equal(argValue(defaultPresetArgs(g), '-ncmoe'), null)
+    assert.equal(argValue(defaultPresetArgs(g), '-ncffn'), null)
+  }
+  // 但通用参数必须齐备
+  const fast = defaultPresetArgs('text:fast')
+  for (const f of ['-ngl', '-fa', '-t', '-tb', '-np', '--cache-type-k', '--cache-type-v',
+                   '--temp', '--top-k', '--top-p', '--min-p', '--repeat-penalty',
+                   '--presence-penalty', '--reasoning-budget', '-c']) {
+    assert.ok(argValue(fast, f) !== null, `默认参数缺少 ${f}`)
+  }
+})
+
+test('defaultPresetArgs: 思考预算默认 8192（8 组一致，必须是具体值）', () => {
+  for (const g of PRESET_GROUPS) {
+    assert.equal(argValue(defaultPresetArgs(g), '--reasoning-budget'), '8192')
+  }
 })
 
 test('buildPresetArgv: 空值的取值型 flag 被整行丢弃，绝不发裸 flag（顺序回归）', () => {
