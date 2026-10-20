@@ -5,3 +5,6 @@ node_modules/
 .idea/
 .vscode/
 dev-reset.ps1
+
+# Local-only git hooks (committer auto-normalization); restored manually per clone
+.githooks/
