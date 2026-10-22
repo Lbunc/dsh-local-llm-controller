@@ -26,7 +26,7 @@ The control card lives in Settings → Plugins → Local LLM Controller
 
 - **One-click local server control**: launch or stop llama-server from the Settings → Plugins card; status, error reason and recent logs show on the same card. DSH reaps plugin child processes on restart.
 - **Dual-slot model management**: slots A / B each bind a model folder; all GGUFs inside are auto-scanned into a pickable list. The vision projector (mmproj) is auto-detected and auto-attached in vision mode.
-- **Eight launch-parameter groups**: organized by slot × text/vision × fast/long, with freely editable rows and prefilled basics.
+- **Eight launch-parameter groups**: organized by slot × text/vision × fast/long, with freely editable rows and prefilled basics. Each row can be marked as a switch or a value: switch rows are emitted even with an empty value (for no-value flags such as `-cmoe`), while value rows with an empty value are skipped and reported in the startup log.
 - **One-click session hookup**: writes the picked model into the DSH model page (see the entry table in the usage flow), ready to pick at the bottom of any session.
 - **Local compaction engine** (v2.1.2): shipped as a subpath export, a local replacement for the DSH built-in compaction engine targeting 32k~150k windows. See "Local compaction engine".
 

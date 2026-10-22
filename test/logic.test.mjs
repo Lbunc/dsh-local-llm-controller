@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   PRESET_GROUPS,
-  SWITCH_FLAGS,
+  isSwitchFlag,
   buildPresetArgv,
   deriveModelNames,
   defaultPresetArgs,
@@ -45,7 +45,7 @@ test('defaultPresetArgs: no value-taking flag ships with an empty value', () => 
   // → llama.cpp 把后面的 -c 当成它的值 → "invalid stoi argument"，服务器起不来。
   for (const g of PRESET_GROUPS) {
     for (const r of defaultPresetArgs(g)) {
-      if (SWITCH_FLAGS.has(r.flag)) continue
+      if (isSwitchFlag(r.flag) || r.switch) continue
       assert.notEqual(r.value, '', `${g} ${r.flag} 需要值但为空`)
     }
   }
@@ -82,19 +82,67 @@ test('buildPresetArgv: 空值的取值型 flag 被整行丢弃，绝不发裸 fl
   assert.deepEqual(argv, ['-c', '32768'])
 })
 
+test('buildPresetArgv: 取值型且无值 → 丢弃并把 flag 报给 onDrop（不再静默）', () => {
+  // -cmoe 事故回归（2026-10-21）：空值非开关行曾无声消失，只能靠 A/B 实验定位；
+  // 现在丢弃时把 flag 报给 onDrop，由调用方在启动日志里点名
+  const dropped = []
+  const argv = buildPresetArgv([
+    { flag: '--reasoning-budget', value: '' },
+    { flag: '-c', value: '131072' },
+  ], (flag) => dropped.push(flag))
+  assert.deepEqual(argv, ['-c', '131072'])
+  assert.deepEqual(dropped, ['--reasoning-budget'])
+})
+
+test('buildPresetArgv: 显式 switch 标记优先于白名单', () => {
+  // 开关标记（方案 B）：未知 flag 标了开关 → 空值也照发
+  assert.deepEqual(
+    buildPresetArgv([{ flag: '--my-custom-switch', value: '', switch: true }]),
+    ['--my-custom-switch'],
+  )
+  // 取值标记：白名单内的 flag 被显式标为取值 → 空值照样丢弃
+  assert.deepEqual(
+    buildPresetArgv([{ flag: '--metrics', value: '', switch: false }]),
+    [],
+  )
+  // 开关标记带值时值跟随
+  assert.deepEqual(
+    buildPresetArgv([{ flag: '-cmoe', value: 'x', switch: true }]),
+    ['-cmoe', 'x'],
+  )
+})
+
 test('buildPresetArgv: 纯开关始终发出，带值时值跟随；空 flag 行被忽略', () => {
+  // 白名单兜底路径：未带 switch 字段的旧行按名单推断（含长别名 --cpu-moe）
   assert.deepEqual(
     buildPresetArgv([
       { flag: '--metrics', value: '' },
       { flag: '--slots', value: '' },
+      { flag: '--cpu-moe', value: '' },
       { flag: '-ngl', value: '99' },
       { flag: '', value: 'x' },
       null,
     ]),
-    ['--metrics', '--slots', '-ngl', '99'],
+    ['--metrics', '--slots', '--cpu-moe', '-ngl', '99'],
   )
   assert.deepEqual(buildPresetArgv(null), [])
   assert.deepEqual(buildPresetArgv([]), [])
+})
+
+test('isSwitchFlag: 前导横线归一化，长别名独立成词干', () => {
+  assert.equal(isSwitchFlag('-cmoe'), true)
+  assert.equal(isSwitchFlag('--cmoe'), true)
+  assert.equal(isSwitchFlag('--metrics'), true)
+  assert.equal(isSwitchFlag('-metrics'), true)
+  assert.equal(isSwitchFlag('--cpu-moe'), true)
+  assert.equal(isSwitchFlag('-cpu-moe'), true)
+  // 不同的 flag 不是同一词干，不能因为长得像就放行
+  assert.equal(isSwitchFlag('--no-cmoe'), false)
+  assert.equal(isSwitchFlag('-c'), false)
+  assert.equal(isSwitchFlag('-ncmoe'), false)
+  assert.equal(isSwitchFlag(''), false)
+  assert.equal(isSwitchFlag(undefined), false)
+  assert.equal(isSwitchFlag(42), false)
 })
 
 test('buildPresetArgv: 默认模板产出的 argv 里每个取值型 flag 后面都跟着值', () => {
@@ -103,7 +151,7 @@ test('buildPresetArgv: 默认模板产出的 argv 里每个取值型 flag 后面
   for (let i = 0; i < argv.length; i++) {
     const tok = argv[i]
     if (!tok.startsWith('-')) continue
-    if (SWITCH_FLAGS.has(tok)) continue
+    if (isSwitchFlag(tok)) continue
     const next = argv[i + 1]
     assert.ok(next !== undefined && !next.startsWith('--'), `${tok} 后面缺少值`)
   }
@@ -113,8 +161,12 @@ test('normalizeArgRow: drops invalid rows, coerces values', () => {
   assert.equal(normalizeArgRow(null), null)
   assert.equal(normalizeArgRow({}), null)
   assert.equal(normalizeArgRow({ flag: ' ' }), null)
-  assert.deepEqual(normalizeArgRow({ flag: '-ngl', value: 99 }), { flag: '-ngl', value: '99' })
-  assert.deepEqual(normalizeArgRow({ flag: '--metrics' }), { flag: '--metrics', value: '' })
+  assert.deepEqual(normalizeArgRow({ flag: '-ngl', value: 99 }), { flag: '-ngl', value: '99', switch: false })
+  // switch 物化：未标记的行按白名单推断，显式标记原样保留
+  assert.deepEqual(normalizeArgRow({ flag: '--metrics' }), { flag: '--metrics', value: '', switch: true })
+  assert.deepEqual(normalizeArgRow({ flag: '-cmoe' }), { flag: '-cmoe', value: '', switch: true })
+  assert.deepEqual(normalizeArgRow({ flag: '-cmoe', switch: false }), { flag: '-cmoe', value: '', switch: false })
+  assert.deepEqual(normalizeArgRow({ flag: '-x', value: '1', switch: true }), { flag: '-x', value: '1', switch: true })
 })
 
 test('normalizePresets: fills all eight groups', () => {
@@ -126,8 +178,9 @@ test('normalizePresets: fills all eight groups', () => {
 test('normalizePresets: keeps provided rows verbatim, prefills the missing groups', () => {
   // a stored group is user state: rows are kept EXACTLY as saved — deletions
   // and value edits persist across reloads, restarts, and plugin upgrades
+  // (switch is materialized by normalizeArgRow, not reset to template state)
   const p = normalizePresets({ 'text:fast': [{ flag: '-ncmoe', value: '20' }] })
-  assert.deepEqual(p['text:fast'], [{ flag: '-ncmoe', value: '20' }])
+  assert.deepEqual(p['text:fast'], [{ flag: '-ncmoe', value: '20', switch: false }])
   assert.notEqual(p['text:long'], undefined)
   assert.equal(argValue(p['text:fast'], '-ncmoe'), '20')
   assert.equal(argValue(p['text:fast'], '--repeat-penalty'), null)
@@ -136,7 +189,7 @@ test('normalizePresets: keeps provided rows verbatim, prefills the missing group
 test('normalizePresets: a group the user emptied stays empty', () => {
   const p = normalizePresets({ 'text:fast': [], 'text:long': [{ flag: '-ngl', value: '99' }] })
   assert.deepEqual(p['text:fast'], [])
-  assert.deepEqual(p['text:long'], [{ flag: '-ngl', value: '99' }])
+  assert.deepEqual(p['text:long'], [{ flag: '-ngl', value: '99', switch: false }])
   // absent groups still get the template
   assert.ok(p['vision:fast'].length > 0)
   assert.ok(p['vision:long'].length > 0)
@@ -149,6 +202,21 @@ test('normalizePresets: template updates never backfill stored groups', () => {
   assert.equal(argValue(p['text:fast'], '--repeat-penalty'), null)
   assert.equal(argValue(p['text:fast'], '--presence-penalty'), null)
   assert.equal(argValue(p['text:fast'], '-ngl'), '99')
+})
+
+test('round-trip: 存量配置的 -cmoe 行全程保住（2026-10-21 事故端到端回归）', () => {
+  // 配置里存的是 {"flag":"-cmoe","value":""}（无标记）——事故当天它在序列化时
+  // 被白名单静默丢弃，MoE 缓存总开关缺失，解码 70 → 10 t/s。修复后经
+  // normalizePresets → buildPresetArgv 必须原样出现在 argv 中
+  const p = normalizePresets({ 'text:long': [
+    { flag: '-cmoe', value: '' },
+    { flag: '--moe-cache-mib', value: '7600' },
+    { flag: '-c', value: '131072' },
+  ] })
+  assert.deepEqual(
+    buildPresetArgv(p['text:long']),
+    ['-cmoe', '--moe-cache-mib', '7600', '-c', '131072'],
+  )
 })
 
 test('argValue: returns null when the flag is absent', () => {
