@@ -57,7 +57,7 @@ Common commands:
 
 ```text
 dsh plugin --profile web outdated                                       # check updates; no output = up to date
-dsh plugin --profile web add dsh-local-llm-controller@2.1.2             # install a pinned version
+dsh plugin --profile web add dsh-local-llm-controller@2.1.3             # install a pinned version
 npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller  # equivalent when the dsh CLI is not installed globally
 ```
 

@@ -57,7 +57,7 @@ dsh plugin --profile web add <地址>
 
 ```text
 dsh plugin --profile web outdated                                       # 检查更新，无输出即已是最新
-dsh plugin --profile web add dsh-local-llm-controller@2.1.2             # 安装指定版本
+dsh plugin --profile web add dsh-local-llm-controller@2.1.3             # 安装指定版本
 npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller  # 未全局安装 dsh CLI 时的等价调用
 ```
 
