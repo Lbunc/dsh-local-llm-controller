@@ -134,22 +134,36 @@ The command automatically cleans the profile's bundle registration and dependenc
 
 > Baseline measured on v1.x. Each line below is one set — paste it into the matching launch-parameter group, or use it to run llama-server manually. Plugin-managed parameters are never added manually (see usage flow step 4).
 
-**35B** (Occamy-1.0, MoE, IQ4_NL):
+**35B** (Occamy-1.0, MoE, IQ4_NL)
+
+**text**
 
 ```text
-35B · text · fast        : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+35B · text · fast        : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 8608 --load-mode none --reasoning-budget 8192 --cache-ram 2048 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
 35B · text · long        : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 131072 --metrics --slots
-35B · vision · fast      : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+```
+
+**vision**
+
+```text
+35B · vision · fast      : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 8608 --load-mode none --reasoning-budget 8192 --cache-ram 2048 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
 35B · vision · long      : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 131072 --metrics --slots
 ```
 
-**9B** (Qwen3.5-9B, Dense, Q4_K_M):
+**9B** (Qwen3.5-9B, Dense, Q4_K_M)
+
+**text**
 
 ```text
-9B · text · fast        : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
-9B · text · long        : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
-9B · vision · fast      : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
-9B · vision · long      : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
+9B · text · fast         : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+9B · text · long         : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
+```
+
+**vision**
+
+```text
+9B · vision · fast       : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+9B · vision · long       : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
 ```
 
 Full measurements, model-selection conclusions, and the experiment methodology are in "Further reading".
