@@ -8,6 +8,7 @@
 |---|---|---|
 | **卸载** | 权重 + 目标上下文 KV 超显存 | 不超 → 见下两行 |
 | → MoE 路径 `-ncmoe` | `isMoE` 且超显存 | MoE 放得下 → `-ncmoe 0` |
+| → MoE 专家缓存 `-cmoe` | `isMoE` 且 `--help` 同时支持 `--moe-cache-mib` 与 `--load-mode none` | 缺任一 → 只走 `-ncmoe` 路径 |
 | → dense 路径 `-ncffn` | 非 MoE 且（权重超显存 **或** KV 量化后仍溢出） | dense 放得下且 KV 不溢 → `-ngl 99`，**不加** `-ncffn` |
 | **KV 量化** | KV/token × 目标上下文 > 显存余量的显著比例 | 占比低 → 默认 `q8_0`，不扫 |
 | **上下文极限** | 用户实际需要 > 32K | 只用短上下文 → 固定 32K |
@@ -66,6 +67,44 @@
 
 ---
 
+## 2.1a′ MoE 专家缓存路径：`-cmoe` + `--moe-cache-mib`（实测验证的高效推理路径）
+
+**语义（`--help` 取证，非推测）**：
+
+| 参数 | 语义 |
+|---|---|
+| `-cmoe, --cpu-moe` | 将**所有** MoE 专家权重留在 CPU（对照：`-ncmoe N` 只留前 N 层） |
+| `--moe-cache-mib N` | GPU 上为 CPU 侧 MoE 专家分配的**缓存**大小（MiB），**一次性预分配、非按需增长**；多卡按 `--tensor-split` 风格分配 |
+| `--load-mode none` | `read()` 拷入进程私有匿名内存 → `cudaHostRegister` pin → 真 DMA 上传；`mmap` 的文件页无法 pin，驱动退化为 staging bounce buffer（多一次完整拷贝且更难异步） |
+
+缓存语义为「上传到 GPU 再计算」：CPU **不**并行计算未命中专家。上游还有 `--moe-cache-hybrid / --moe-cache-profile / --moe-cache-audit` 等扩展参数，是否并入当前构建以 `--help` 为准。
+
+**与 `-ncmoe` 的本质区别**：`-ncmoe` 是**静态分层切分**（前 N 层专家永远在 CPU，decode 瓶颈在 CPU 权重带宽）；`-cmoe` + cache 是**动态热点缓存**（全部专家在 CPU，GPU 用固定 MiB 预算缓存热点专家，decode 转 GPU/传输瓶颈）。实测（等显存 A/B 同会话对照）decode 在短/中/长上下文全档领先且 CPU 大幅释放；代价是 prefill 略慢（缓存搬运开销）、GPU 占用升高。完整实测样例见 [`../../measurements/08-occamy-cmoe.md`](../../measurements/08-occamy-cmoe.md)。
+
+### ★ 部署硬约束
+
+1. **B 臂必须带 `--load-mode none`**：mmap 文件页无法 pin，缓存上传只能走 bounce buffer。这是参数语义决定的约束，不是可调项。
+2. **缓存上限随上下文下调**：KV 占用随 ctx 线性增长，缓存必须按同额度让位；超过等显存上限即溢出 → `shared` 跳升、decode 跌回 CPU 水平。上限由逐点探测得出（见下表第 3 步），不靠公式外推（可用「底座 + KV(ctx) + cache ≤ 信封」的账目做核对）。
+3. **宿主内存参数必须显式设置**：`--cache-ram` 默认值在小型宿主内存机器上可能是 OOM 坑；**对照实验显式写 `--cache-ram 0`**（该缓存只吃宿主内存、不影响 t/s 与显存，设 0 去掉一个内存压力变量），并按需压低 `--ctx-checkpoints`。
+
+### ★★ 实验设计：等显存 A/B 同会话对照（ABAB）
+
+以 `-ncmoe` 最优档为 A 臂（基线），`-cmoe` + cache 为 B 臂，复用 `start_server.ps1` 与四件套 harness：
+
+| 步骤 | 内容 | 判据 |
+|---|---|---|
+| 1. 探查 | `--help` 确认 `--moe-cache-mib` 与 `--load-mode none` 存在 | 缺任一 → 只走 `-ncmoe` |
+| 2. 定 A 臂 | 按 2.1a 两阶段法选出 A 臂 `-ncmoe N` | `shared` 回基线 + 深填充不崩 + 长生成可接受 |
+| 3. 找 B 臂上限 | **只加载不推理**逐点逼近（~25 s/点）：cache 由小到大试到溢出，回退一档 | `shared` 基线跳升或 dedicated 反降 = 溢出 |
+| 4. 等显存校核 | B 臂 idle dedicated ≈ A 臂 idle dedicated（差在测量噪声内） | 等显存对比成立，否则调 cache 重校 |
+| 5. ABAB 对照 | 同一份 prompt、同会话内 A/B 前后相邻交替，每臂 ≥3 次（如 1500-token 生成） | **同时记录 decode t/s 与 prefill pps**（B 用 prefill 换 decode，只看 decode 会误判） |
+| 6. 资源画像 | 四件套记 gpu% / cpu% 快照 | B 转 GPU/传输密集、CPU 释放属预期，写入权衡 |
+| 7. 逐档重复 | 每个目标上下文档位重复 3–5 步（缓存上限随 ctx 重算） | 无翻转点 → B 全档推荐；出现翻转 → 写明分界档位 |
+
+**结论判据**：B 臂 decode 领先幅度须远超状态噪声（±2%）且方向在所有重复中一致；prefill 差距与 CPU/GPU 占用变化记入权衡。**回退 `-ncmoe` 的唯一理由**：需要比 `-cmoe` 方案等显存上限更长的上下文弹性——`-ncmoe` 靠继续加大 N 换上下文，`-cmoe` 的缓存被显存卡死后没有这个弹性。
+
+---
+
 ## 2.1b dense 路径：`-ncffn N`
 
 含义：`--n-cpu-ffn N` 把**前 N 层的 dense FFN 权重**留在 CPU，attention / norm 仍按 `-ngl 99` 在 GPU。
@@ -105,6 +144,7 @@
 2. 先省 KV：q8_0 / q4_0（03-kv-quant.md）
 3. 仍超 → 走对应卸载路径：
      MoE   → -ncmoe 粗扫找断崖 → 长上下文从断崖档往上摸
+             （--help 支持 --moe-cache-mib 时加测 `-cmoe` 对照臂，等显存 ABAB 定夺，见 2.1a′）
      dense → -ncffn 救援（溢出多少补多少）
 4. 每档判定：shared 回落基线 + 深填充不崩 + 长生成 t/s 可接受
 ```

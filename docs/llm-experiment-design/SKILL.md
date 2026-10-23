@@ -3,8 +3,9 @@ name: llm-experiment-design
 description: >-
   Use when setting up, benchmarking, or performance-tuning a local LLM served
   with llama.cpp (or similar) on user hardware: designing and running experiments
-  through a necessity-gated scan (MoE expert offload, dense FFN offload, KV cache
-  quantization, context limit, reasoning budget, threads, speculative decode),
+  through a necessity-gated scan (MoE expert offload, MoE expert cache, dense FFN
+  offload, KV cache quantization, context limit, reasoning budget, threads,
+  speculative decode),
   measuring with a four-signal harness (t/s + VRAM dedicated/shared + GPU util +
   CPU util), verifying quality and capability, and archiving results. Model- and
   version-agnostic: every branch is driven by runtime probing (GGUF metadata,
@@ -16,7 +17,7 @@ whenToUse: >-
   compare configurations or models. Applies to both dense and MoE models.
   Not for API-only models or pure code tasks.
 metadata:
-  version: 5
+  version: 6
   scope: llama.cpp, single GPU, single instance, MoE and dense models, Windows/PowerShell 7
 ---
 
@@ -33,7 +34,7 @@ metadata:
 |---|---|---|
 | 0 | [`reference/00-probe.md`](reference/00-probe.md) | 资料检索、参数存在性探查、GGUF 派生量、上游默认值取证、四个能力标记的分流 |
 | 1 | [`reference/01-environment.md`](reference/01-environment.md) | 部署约束、硬件清单、干净基线、视觉模型的两个必问项 |
-| 2.0–2.1 | [`reference/02-offload.md`](reference/02-offload.md) | 必要性判定门、统一卸载框架（MoE `-ncmoe` / dense `-ncffn`）、两阶段取值法 |
+| 2.0–2.1 | [`reference/02-offload.md`](reference/02-offload.md) | 必要性判定门、统一卸载框架（MoE `-ncmoe` / dense `-ncffn` / MoE 专家缓存 `-cmoe`）、两阶段取值法、等显存 A/B 对照（ABAB） |
 | 2.2 | [`reference/03-kv-quant.md`](reference/03-kv-quant.md) | KV 量化档取舍、KL 与 PPL 的分工 |
 | 2.3 | [`reference/04-context.md`](reference/04-context.md) | 上下文三问：装得下 / 能用 / 好用 |
 | 2.4 | [`reference/05-reasoning-budget.md`](reference/05-reasoning-budget.md) | **硬规则 `-rb = -c/2`**、`max_tokens` 算法、截断语义 |

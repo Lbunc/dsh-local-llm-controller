@@ -1,6 +1,6 @@
 # llama-server 命令行帮助中文手册
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\llama-server.exe -h` 的原始输出（llama.cpp b10883，Windows CUDA 13.3 x64 发行版）。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版）`llama-server.exe -h` 的原始输出。
 > 原文分为 `common params`、`sampling params`、`speculative params`、`example-specific params` 四大块；本文档按**用途重新分类**，参数名、取值、环境变量保持英文原文，说明部分为中文翻译。
 > `-h` 输出中每一项末尾的 `(env: XXX)` 表示该参数也可以用同名环境变量设置。
 

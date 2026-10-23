@@ -1,6 +1,6 @@
 # llama 多模态与杂项工具命令行帮助中文手册
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\` 下 `llama-mtmd-cli.exe`、`llama-mtmd-debug.exe`、`llama-tts.exe`、4 个已废弃视觉包装器、`ggml-rpc-server.exe` 的 `-h` 输出（llama.cpp b10883）。原始英文全文存档于 [`docs/help-raw/`](help-raw/)；同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》（下称"server 手册 §N"）。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版）下 `llama-mtmd-cli.exe`、`llama-mtmd-debug.exe`、`llama-tts.exe`、4 个已废弃视觉包装器、`ggml-rpc-server.exe` 的 `-h` 输出。同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》（下称"server 手册 §N"）。
 
 ## 目录
 
@@ -122,7 +122,7 @@
 
 | 工具 | 在插件中的用途 |
 |---|---|
-| `llama-mtmd-cli` | 视觉模型调试与测试（`docs/measurements/scripts/vision_ctx_probe.ps1` 等脚本可能用到） |
+| `llama-mtmd-cli` | 视觉模型调试与测试 |
 | `llama-mtmd-debug` | 多模态管线调试（开发/排障阶段使用） |
 | `ggml-rpc-server` | RPC 远程计算（高级部署场景，插件默认不使用） |
 | 4 个废弃视觉包装器 | **不推荐使用**，迁移至 `llama-mtmd-cli` |

@@ -1,7 +1,6 @@
 # llama.cpp 工具手册中文索引
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\`，共 22 个 exe，全部 `-h` 输出已翻译归档。
-> 原始英文帮助全文存档：[`docs/help-raw/`](help-raw/)（每个 exe 一个 `.txt`），另有逐参数比对报告 [`_diff_report.txt`](help-raw/_diff_report.txt) 与工具专属段落汇总 [`_example_specific_all.txt`](help-raw/_example_specific_all.txt)。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版），共 22 个 exe，全部 `-h` 输出已翻译归档。
 
 本索引作为插件 `docs/` 下 llama-server 手册的**补充参考**，列出全部 llama.cpp 工具的中文手册覆盖范围。插件主要使用 `llama-server`，其余工具（`llama-bench`、`llama-perplexity` 等）在深度调优时参考本章。
 
@@ -39,4 +38,4 @@
 | `llama-imatrix` | 重要性矩阵（用于 IQ 量化） |
 | `llama-tokenize` | token 数量核对 |
 
-> 注：`docs/help-raw/` 目录下的原始输出文件（`.txt`、`.out`、`.err`）为英文原文存档，供需要对照英文原文时查阅。
+> 注：英文原文仅作翻译底稿留存于测试环境，不随文档分发。

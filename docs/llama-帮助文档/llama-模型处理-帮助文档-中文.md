@@ -1,6 +1,6 @@
 # llama 模型处理工具命令行帮助中文手册
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\` 下 `llama-quantize.exe`、`llama-imatrix.exe`、`llama-gguf-split.exe`、`llama-tokenize.exe` 的 `-h` 输出（llama.cpp b10883）。原始英文全文存档于 [`docs/help-raw/`](help-raw/)；同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版）下 `llama-quantize.exe`、`llama-imatrix.exe`、`llama-gguf-split.exe`、`llama-tokenize.exe` 的 `-h` 输出。同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》。
 
 ## 目录
 
@@ -50,7 +50,7 @@
 | `IQ3_S` | 3-bit 量化 | ~3-bit |
 | `IQ2_S` | 2-bit 量化（极端压缩） | ~2-bit |
 
-> **插件关联**：插件管理的模型（如 Qwen3.6-35B 的 `IQ4_NL` 档位）通过此工具量化。`docs/measurements/scripts/scan_ncmoe.ps1` 等脚本会调用量化流程。
+> **插件关联**：插件管理的模型（如 Qwen3.6-35B 的 `IQ4_NL` 档位）通过此工具量化；量化与 imatrix 工作流见本手册对应章节。
 
 ---
 
@@ -121,4 +121,4 @@
 | `IQ3_S` | 3-bit 量化，极端压缩 | >13B |
 | `IQ2_S` | 2-bit 量化，极限压缩（质量损失大） | >30B |
 
-> **插件提示**：插件默认模型卡（如 Qwen3.6-35B-Uncensored-IQ4_NL）使用 `IQ4_NL` 量化档位。`docs/measurements/scripts/bench_ncmoe.ps1` 等脚本会引用不同量化档位的模型进行对比测试。
+> **插件提示**：插件默认模型卡（如 Qwen3.6-35B-Uncensored-IQ4_NL）使用 `IQ4_NL` 量化档位；不同量化档位的对比测试属深度调优工作流，可配合 `llama-bench`（见 bench 手册）完成。

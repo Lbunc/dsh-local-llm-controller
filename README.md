@@ -26,9 +26,9 @@
 
 - **一键启停本地服务**：在设置 → 插件卡片上启动或停止 llama-server，状态、错误原因与最近日志同卡显示；DSH 重启时插件自动清理子进程。
 - **双槽位模型管理**：槽位 A / B 各绑定一个模型文件夹，自动扫描其中全部 GGUF 生成候选列表；视觉投影器（mmproj）自动识别，视觉模式自动挂载。
-- **八组启动参数**：按槽位 × 文本/视觉 × 快速/长上下文划分，参数行自由增删，基础参数预填。每行可标记为开关或取值：开关行值为空也照发（适用于 `-cmoe` 等无值参数），取值行值为空则该行不生效并在启动日志中提示。
+- **八组启动参数**：按槽位 × 文本/视觉 × 快速/长上下文划分，参数行自由增删，基础参数预填，每行可标记为开关或取值。
 - **一键接入会话**：将选中模型写入 DSH 模型页，会话底部即可选用本地模型对话。
-- **本地压缩引擎**（v2.1.2）：以子路径导出形式提供 DSH 内置压缩引擎的本地替代实现，面向 32k\~150k 本地窗口，详见「本地压缩引擎」。
+- **本地压缩引擎**（v2.1.2）：以子路径导出形式提供 DSH 内置压缩引擎的本地替代实现，面向 32k\~256k 本地窗口，详见「本地压缩引擎」。
 
 > 本插件仅承担 DSH 与 llama.cpp 之间的连接与控制：不包含 llama-server 本体，也不负责模型下载。二者分别来自上游 [llama.cpp](https://github.com/ggml-org/llama.cpp) 与社区量化发布（如 Hugging Face）。
 
@@ -102,43 +102,37 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller  # 未全
 
 ## 推荐启动参数
 
-> 数据为 v1.x 实测基准。以下每行一套，粘贴进对应启动参数组即可，也可用于手动运行 llama-server。由插件管理的参数无需手动添加（见「使用流程」第 4 步）。
+> 12G VRAM + 32G RAM
 
-**35B（Qwen3.6-35B-A3B，MoE）**：
-
-```text
-35B · 文本 · 快速    : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 32768 -ncmoe 20 --reasoning-budget 2048 --metrics --slots
-35B · 文本 · 长上下文 : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 131072 -ncmoe 22 --reasoning-budget 2048 --metrics --slots
-35B · 视觉 · 快速    : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 32768 -ncmoe 24 --reasoning-budget 2048 --metrics --slots
-35B · 视觉 · 长上下文 : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 98304 -ncmoe 24 --reasoning-budget 2048 --metrics --slots
-```
-
-**9B（Qwen3.5-9B，Dense）**：
+**35B（Occamy-1.0，MoE，IQ4_NL）**：
 
 ```text
-9B · 文本 · 快速    : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 32768 --metrics --slots
-9B · 文本 · 长上下文 : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
-9B · 视觉 · 快速    : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 32768 --metrics --slots
-9B · 视觉 · 长上下文 : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
+35B · 文本 · 快速    : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+35B · 文本 · 长上下文 : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 131072 --metrics --slots
+35B · 视觉 · 快速    : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+35B · 视觉 · 长上下文 : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 131072 --metrics --slots
 ```
 
-| 实测结论                                  | 说明                            |
-| :------------------------------------ | :---------------------------- |
-| -ncmoe（MoE 专家卸载数）与 --reasoning-budget | 35B 的两项实测优化点                  |
-| 长上下文可靠上限                              | 35B（ncmoe 22）：131072；9B：65536 |
-| 196608                                | 硬性上限，KV 缓存溢出共享内存              |
+**9B（Qwen3.5-9B，Dense，Q4_K_M）**：
+
+```text
+9B · 文本 · 快速    : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+9B · 文本 · 长上下文 : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
+9B · 视觉 · 快速    : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+9B · 视觉 · 长上下文 : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
+```
 
 更完整的实测数据、选型结论与实验方法见「推荐阅读」。
 
 ## 推荐阅读
 
-- [本地模型调优实测存档（分模型报告）](docs/measurements/README.md)：35B / 9B / 27B / Occamy 每模型一份实测报告，含结论速览、横向能力对比、复现脚本与原始日志说明。
-- [Occamy-1.0 vs Qwen3.6-35B-A3B 完整对比](docs/measurements/occamy_vs_ud_report.md)：同底座 35B MoE 的能力、速度与上下文同会话 A/B 对比，含 decode 提升 17% 对 prefill 提升 32% 的量化结论。
+- [本地模型调优实测存档（分模型报告）](docs/measurements/README.md)：跨模型共同经验 + 35B / 9B / 27B / Occamy 每模型一份实测报告（编号 00-08），含结论速览、横向能力对比与原始日志留存说明。
+- [Occamy-1.0 调优与部署存档（`-ncmoe` 方案）](docs/measurements/07-occamy-ncmoe.md)：含视觉预设实测；`-cmoe` 方案与 `-ncmoe` 方案的同显存三档对照见 [08-occamy-cmoe.md](docs/measurements/08-occamy-cmoe.md)。
 - [llm-experiment-design · DSH 调优 Skill](docs/llm-experiment-design/SKILL.md)：面向新 GGUF 深度调优的 Skill，按「运行时探查 → 必要性驱动扫描 → 四件套测量 → 能力验证」流程输出可复现的最优启动参数（MoE 与 Dense 通用）。
 
 ## 本地压缩引擎（v2.1.2）
 
-本插件以子路径导出形式提供压缩引擎 LocalCompactionEngine，继承官方 CompactionEngine 基类，用于替换 DSH 内置压缩引擎。面向 32k\~150k 本地上下文窗口，解决内置引擎的两类问题：触发阈值被固定预留量压低乃至静默停用；压缩后占用仍然偏高，下一轮再次触发压缩形成正反馈。
+本插件以子路径导出形式提供压缩引擎 LocalCompactionEngine，继承官方 CompactionEngine 基类，用于替换 DSH 内置压缩引擎。面向 32k\~256k 本地上下文窗口，解决内置引擎的两类问题：触发阈值被固定预留量压低乃至静默停用；压缩后占用仍然偏高，下一轮再次触发压缩形成正反馈。
 
 ### 包名与存在形式
 
@@ -159,7 +153,7 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller  # 未全
 | 二次触发   | 摘要与保留尾部之和可能高于阈值，下一轮再次压缩                          | 尾部封顶构造保证压缩后占用远低于阈值，从构造上消除正反馈              |
 | 摘要调用   | 固定 65536 token 预算                                | 三级降级（见下），输出预算按剩余空间动态推导                    |
 | 工具结果修剪 | 可选                                               | 压缩前强制执行，修剪后占用达标即跳过 LLM 摘要                 |
-| 适用场景   | 百万级云端窗口                                          | 32k\~150k 本地窗口                            |
+| 适用场景   | 百万级云端窗口                                          | 32k\~256k 本地窗口                            |
 
 ### 核心机制
 
@@ -215,7 +209,6 @@ npx @deepseek-ai/dsh plugin --profile web add dsh-local-llm-controller  # 未全
 | :--- | :----- | :--------------------------------------------------------------------------------------------------------------------- |
 | fast | 32768  | 受控实测：占用 13116 tokens 压缩至 7103，此后稳定运行，无二次触发                                                                             |
 | long | 131072 | 真实会话：93313、91924、93973 三次越线均由工具结果修剪单独化解（最低降至 69189），未调用 LLM 摘要；93290 再次越线后触发压缩，本地模型摘要约 1817 tokens，占用降至 44479，此后低位稳定运行 |
-
 
 ## 许可
 

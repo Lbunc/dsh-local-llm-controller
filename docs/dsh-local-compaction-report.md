@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | 现象发生时间 | 2026-09-27 19:36–19:38 (+08:00) |
-| 样本会话 | `session-62d164b8-2c56-4f8f-b91d-6ece94884b44`（cwd `D:\DSH\plug`） |
+| 样本会话 | `session-62d164b8-2c56-4f8f-b91d-6ece94884b44` |
 | Agent 预设 | `local-agent`（本地工作模式，`agent-preset/selected` @ seq 4，19:11:58） |
 | 路由模型 | `dsh-local / occamy-1.0-IQ4_NL`，`reasoningEffort: high`，请求 `maxTokens=16384` |
 | 声明窗口 | `contextWindow: 131072` |
@@ -107,7 +107,7 @@ threshold = min( contextWindow × thresholdRatio ,  contextWindow − 请求maxT
 
 ### 6.1 用户侧（唯一有效旋钮 = `headroomTokens`）
 
-文件：`C:\Users\98160\.dsh\local-bundles\user-agent-presets\cordis.patch.yml` L154-155
+文件：`~/.dsh/local-bundles/user-agent-presets/cordis.patch.yml` L154-155
 （`profiles/web/node_modules/@local/dsh-user-agent-presets` 是指向它的 junction）；改后**重启 DSH**。
 
 ```yaml

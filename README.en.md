@@ -26,9 +26,9 @@ The control card lives in Settings → Plugins → Local LLM Controller
 
 - **One-click local server control**: launch or stop llama-server from the Settings → Plugins card; status, error reason and recent logs show on the same card. DSH reaps plugin child processes on restart.
 - **Dual-slot model management**: slots A / B each bind a model folder; all GGUFs inside are auto-scanned into a pickable list. The vision projector (mmproj) is auto-detected and auto-attached in vision mode.
-- **Eight launch-parameter groups**: organized by slot × text/vision × fast/long, with freely editable rows and prefilled basics. Each row can be marked as a switch or a value: switch rows are emitted even with an empty value (for no-value flags such as `-cmoe`), while value rows with an empty value are skipped and reported in the startup log.
+- **Eight launch-parameter groups**: organized by slot × text/vision × fast/long, with freely editable rows and prefilled basics, Each row can be marked as a switch or a value.
 - **One-click session hookup**: writes the picked model into the DSH model page (see the entry table in the usage flow), ready to pick at the bottom of any session.
-- **Local compaction engine** (v2.1.2): shipped as a subpath export, a local replacement for the DSH built-in compaction engine targeting 32k~150k windows. See "Local compaction engine".
+- **Local compaction engine** (v2.1.2): shipped as a subpath export, a local replacement for the DSH built-in compaction engine targeting 32k~256k windows. See "Local compaction engine".
 
 > This plugin only connects DSH ↔ llama.cpp: it ships neither the llama-server binary nor models. Those come from upstream [llama.cpp](https://github.com/ggml-org/llama.cpp) and community quantizations (e.g. Hugging Face).
 
@@ -134,41 +134,35 @@ The command automatically cleans the profile's bundle registration and dependenc
 
 > Baseline measured on v1.x. Each line below is one set — paste it into the matching launch-parameter group, or use it to run llama-server manually. Plugin-managed parameters are never added manually (see usage flow step 4).
 
-**35B** (Qwen3.6-35B-A3B, MoE):
+**35B** (Occamy-1.0, MoE, IQ4_NL):
 
 ```text
-35B · text · fast        : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 32768 -ncmoe 20 --reasoning-budget 2048 --metrics --slots
-35B · text · long        : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 131072 -ncmoe 22 --reasoning-budget 2048 --metrics --slots
-35B · vision · fast      : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 32768 -ncmoe 24 --reasoning-budget 2048 --metrics --slots
-35B · vision · long      : -ngl 99 -fa on -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 1.0 --top-k 20 --top-p 0.95 --min-p 0.0 -c 98304 -ncmoe 24 --reasoning-budget 2048 --metrics --slots
+35B · text · fast        : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+35B · text · long        : -ngl 99 -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 131072 --metrics --slots
+35B · vision · fast      : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+35B · vision · long      : -ngl 99 -mmdev none -fa on -np 1 --cache-type-k q8_0 --cache-type-v q8_0 -cmoe --moe-cache-mib 7600 --load-mode none --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.0 --repeat-penalty 1 --presence-penalty 0 -c 131072 --metrics --slots
 ```
 
-**9B** (Qwen3.5-9B, Dense):
+**9B** (Qwen3.5-9B, Dense, Q4_K_M):
 
 ```text
-9B · text · fast        : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 32768 --metrics --slots
-9B · text · long        : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
-9B · vision · fast      : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 32768 --metrics --slots
-9B · vision · long      : -ngl 99 -fa auto -t 20 -tb 20 -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 -c 65536 --metrics --slots
+9B · text · fast        : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+9B · text · long        : -ngl 99 -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
+9B · vision · fast      : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 32768 --metrics --slots
+9B · vision · long      : -ngl 99 -mmdev none -fa auto -np 1 --cache-type-k q8_0 --cache-type-v q8_0 --reasoning-budget 8192 --cache-ram 4096 --ctx-checkpoints 8 --temp 0.8 --top-k 40 --top-p 0.95 --min-p 0.05 --repeat-penalty 1 --presence-penalty 0 -c 65536 --metrics --slots
 ```
-
-| Measured conclusions | Notes |
-| :- | :- |
-| -ncmoe (MoE expert offload count) and --reasoning-budget | Two measured optimization points for the 35B |
-| Reliable long-context ceiling | 131072 for the 35B (ncmoe 22); 65536 for the 9B |
-| 196608 | Hard cliff — the KV cache spills into shared memory |
 
 Full measurements, model-selection conclusions, and the experiment methodology are in "Further reading".
 
 ## Further reading
 
-- [Tuning report archive (per-model reports)](docs/measurements/README.md): one report per model — 35B / 9B / 27B / Occamy — with a conclusions digest, cross-model capability comparison, and reproduction scripts & raw-log notes.
-- [Occamy-1.0 vs Qwen3.6-35B-A3B comparison](docs/measurements/occamy_vs_ud_report.md): same-session A/B of two same-base 35B MoEs across capability, speed and context, quantified as +17% decode versus +32% prefill.
+- [Tuning report archive (per-model reports)](docs/measurements/README.md): a cross-model lessons digest plus one report per model — 35B / 9B / 27B / Occamy (numbered 00-08) — with a conclusions digest, cross-model capability comparison, and raw-log locations.
+- [Occamy-1.0 tuning & deployment archive (`-ncmoe`)](docs/measurements/07-occamy-ncmoe.md): includes vision-preset measurements; the same-vram three-tier comparison of the `-cmoe` expert-cache configuration versus the `-ncmoe` static-offload configuration is in [08-occamy-cmoe.md](docs/measurements/08-occamy-cmoe.md).
 - [llm-experiment-design · DSH tuning skill](docs/llm-experiment-design/SKILL.md): a skill for deep-tuning a new GGUF, scheduling scripts and interpreting results through the pipeline of runtime probing → necessity-gated scans → four-signal measurements → capability verification, delivering a reproducible set of optimal launch parameters (MoE and dense both supported).
 
 ## Local compaction engine (v2.1.2)
 
-The plugin ships a compaction engine, LocalCompactionEngine, as a subpath export. It extends the official CompactionEngine base class and replaces the DSH built-in compaction engine. Targeting 32k~150k local context windows, it fixes two failure modes of the built-in engine: the trigger threshold being crushed (or silently disabled) by a fixed reservation, and a feedback loop in which the post-compaction usage re-triggers compaction on the next turn.
+The plugin ships a compaction engine, LocalCompactionEngine, as a subpath export. It extends the official CompactionEngine base class and replaces the DSH built-in compaction engine. Targeting 32k~256k local context windows, it fixes two failure modes of the built-in engine: the trigger threshold being crushed (or silently disabled) by a fixed reservation, and a feedback loop in which the post-compaction usage re-triggers compaction on the next turn.
 
 ### Package name and form
 
@@ -189,7 +183,7 @@ The plugin ships a compaction engine, LocalCompactionEngine, as a subpath export
 | Re-triggering | Summary plus retained tail can exceed the threshold again next turn | The capped-tail construction keeps the post-compaction usage well below the threshold, eliminating the feedback loop |
 | Summarization call | Fixed 65,536-token budget | Three-tier fallback (below), output budget derived from remaining space |
 | Tool-result pruning | Optional | Enforced before compaction; if the usage drops below the threshold, LLM summarization is skipped entirely |
-| Intended window | Million-token cloud models | 32k~150k local windows |
+| Intended window | Million-token cloud models | 32k~256k local windows |
 
 ### Core mechanisms
 

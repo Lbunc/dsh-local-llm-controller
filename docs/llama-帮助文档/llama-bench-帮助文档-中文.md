@@ -1,10 +1,10 @@
 # llama-bench 命令行帮助中文手册
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\llama-bench.exe -h` 的原始输出（llama.cpp b10883，Windows CUDA 13.3 x64 发行版）。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版）`llama-bench.exe -h` 的原始输出。
 > 原文分为 `options`（运行与输出控制）和 `test parameters`（测试参数）两块，末尾附多值扫描规则；本文档在此基础上按用途细分，参数名与取值保持英文原文。
 > 注意：该发行版运行 `-h` 时会先打印后端加载日志（`ggml_cuda_init ...`、`load_backend ...`），随后才是 usage 文本——那些是运行时日志，不属于帮助内容。部分默认值与本机相关（如 `-t` 默认 14 即本机自动检测的线程数）。
 
-本手册用于**深度调优阶段的吞吐基准测试**。插件日常运行不依赖 llama-bench，但 `docs/measurements/scripts/bench_ncmoe.ps1` 等脚本通过它验证 `-ncmoe N` 对速度的影响。
+本手册用于**深度调优阶段的吞吐基准测试**。插件日常运行不依赖 llama-bench；深度调优时可用它验证 `-ncmoe N` 等卸载参数对速度的影响。
 
 ## 目录
 
@@ -145,7 +145,7 @@ llama-bench 复用了 llama.cpp 的公共参数体系，以下参数含义与 `l
 
 | 参数/特性 | 在插件调优中的用途 |
 |---|---|
-| `-ncmoe N` | 扫描 MoE 专家层卸载数量，找到速度与显存的平衡点（`docs/measurements/scripts/bench_ncmoe.ps1`） |
+| `-ncmoe N` | 扫描 MoE 专家层卸载数量，找到速度与显存的平衡点 |
 | `-o csv` | 归档实验结果，每条记录自带全部实验条件 |
 | `-d 深度扫描` | 测试长上下文深度下的吞吐衰减 |
 | `-fitt` | 显存自适应（**注意：不能替代 `-ncmoe`，超额 MoE 必须显式扫卸载档**） |

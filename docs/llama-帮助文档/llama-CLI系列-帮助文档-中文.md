@@ -1,6 +1,6 @@
 # llama CLI 系列工具命令行帮助中文手册
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\` 下 `llama.exe`、`llama-cli.exe`、`llama-completion.exe` 的 `-h` 输出（llama.cpp b10883）。原始英文全文存档于 [`docs/help-raw/`](help-raw/)；同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》（下称"server 手册 §N"）。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版）下 `llama.exe`、`llama-cli.exe`、`llama-completion.exe` 的 `-h` 输出。同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》（下称"server 手册 §N"）。
 
 ## 目录
 

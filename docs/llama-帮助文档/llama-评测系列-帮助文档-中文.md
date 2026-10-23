@@ -1,6 +1,6 @@
 # llama 评测系列工具命令行帮助中文手册
 
-> 来源：`F:\llama-b10883-bin-win-cuda-13.3-x64\` 下 `llama-batched-bench.exe`、`llama-perplexity.exe`、`llama-fit-params.exe`、`llama-results.exe` 的 `-h` 输出（llama.cpp b10883）。原始英文全文存档于 [`docs/help-raw/`](help-raw/)；同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》（下称"server 手册 §N"）。
+> 来源：llama.cpp b10883（Windows CUDA 13.3 x64 发行版）下 `llama-batched-bench.exe`、`llama-perplexity.exe`、`llama-fit-params.exe`、`llama-results.exe` 的 `-h` 输出。同名公共参数参照《[llama-server 帮助文档（中文）](./llama-server-帮助文档-中文.md)》（下称"server 手册 §N"）。
 
 ## 目录
 
@@ -98,7 +98,7 @@
 | `total-GB` | 总显存占用估算（GB） |
 | `fits-in-VRAM` | 是否在目标显存内（true/false） |
 
-> **插件关联**：`docs/measurements/scripts/gguf_ctxlen.ps1` 与 `docs/measurements/scripts/scan_ctx.ps1` 等脚本使用 `llama-fit-params` 估算显存，辅助 `-ncmoe`/`-c` 调优决策。
+> **插件关联**：深度调优工作流可借助 `llama-fit-params` 估算显存占用，辅助 `-ncmoe`/`-c` 取值决策。
 
 ---
 
