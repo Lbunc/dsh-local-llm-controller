@@ -8,3 +8,6 @@ dev-reset.ps1
 
 # Local-only git hooks (committer auto-normalization); restored manually per clone
 .githooks/
+
+# Local verification baseline (runtime verification round results)
+verification-baseline.local.json
